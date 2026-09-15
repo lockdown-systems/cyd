@@ -12,7 +12,11 @@ import {
   createXControllerTestContext,
   type XControllerTestContext,
 } from "../fixtures/accountTestHarness";
-import { seedTweet } from "../fixtures/tweetFactory";
+import {
+  seedConversation,
+  seedMessage,
+  seedTweet,
+} from "../fixtures/tweetFactory";
 
 async function createTestArchiveZip(targetDir: string): Promise<void> {
   await fs.promises.mkdir(targetDir, { recursive: true });
@@ -137,6 +141,66 @@ describe("XAccountController - Archive integration", () => {
 
     const extractedIndex = path.join(accountDataPath, "index.html");
     expect(fs.existsSync(extractedIndex)).toBe(true);
+
+    getResourcesPathSpy.mockRestore();
+  });
+
+  test("archiveBuild keeps saved conversations and messages in the archive", async () => {
+    const controller = controllerContext!.controller;
+    const username = controller.account!.username;
+    const accountDataPath = Util.getAccountDataPath("X", username);
+    const assetsPath = path.join(accountDataPath, "assets");
+    fs.rmSync(assetsPath, { recursive: true, force: true });
+
+    exec(
+      controller.db!,
+      "INSERT INTO user (userID, name, screenName) VALUES (?, ?, ?)",
+      ["participant-user", "Participant", "participant"],
+    );
+    seedConversation(controller, {
+      conversationID: "saved-conversation",
+      deletedAt: null,
+    });
+    exec(
+      controller.db!,
+      "INSERT INTO conversation_participant (conversationID, userID) VALUES (?, ?)",
+      ["saved-conversation", "participant-user"],
+    );
+    seedMessage(controller, {
+      messageID: "saved-message",
+      conversationID: "saved-conversation",
+      text: "A message Cyd already saved",
+    });
+
+    const resourcesPath = path.join(accountDataPath, "resources-fixture");
+    await createTestArchiveZip(resourcesPath);
+    const getResourcesPathSpy = vi
+      .spyOn(Util, "getResourcesPath")
+      .mockReturnValue(resourcesPath);
+
+    await controller.archiveBuild();
+
+    const archiveContents = fs.readFileSync(
+      path.join(assetsPath, "archive.js"),
+      "utf-8",
+    );
+    const archiveData = JSON.parse(
+      archiveContents.replace("window.archiveData=", "").replace(/;$/, ""),
+    );
+
+    expect(archiveData.conversations).toHaveLength(1);
+    expect(archiveData.conversations[0].conversationID).toBe(
+      "saved-conversation",
+    );
+    expect(archiveData.conversations[0].participants).toEqual([
+      "participant-user",
+    ]);
+    expect(archiveData.messages).toHaveLength(1);
+    expect(archiveData.messages[0]).toMatchObject({
+      messageID: "saved-message",
+      conversationID: "saved-conversation",
+      text: "A message Cyd already saved",
+    });
 
     getResourcesPathSpy.mockRestore();
   });

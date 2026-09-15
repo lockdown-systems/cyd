@@ -9,11 +9,7 @@ import {
   createXControllerTestContext,
   type XControllerTestContext,
 } from "../fixtures/accountTestHarness";
-import {
-  seedTweet,
-  seedConversation,
-  seedMessage,
-} from "../fixtures/tweetFactory";
+import { seedTweet } from "../fixtures/tweetFactory";
 
 describe("XAccountController - Deletion integration", () => {
   let controllerContext: XControllerTestContext | null = null;
@@ -137,7 +133,7 @@ describe("XAccountController - Deletion integration", () => {
     expect(bookmarks.tweets.map((tweet) => tweet.id)).toEqual([bookmarkActive]);
   });
 
-  test("deleteTweet updates timestamps and DM helpers mark rows deleted", async () => {
+  test("deleteTweet updates timestamps", async () => {
     const controller = controllerContext!.controller;
 
     const tweetID = seedTweet(controller, { tweetID: "tweet-delete" });
@@ -181,79 +177,5 @@ describe("XAccountController - Deletion integration", () => {
     expect(rowByID[retweetID].deletedRetweetAt).not.toBeNull();
     expect(rowByID[likeID].deletedLikeAt).not.toBeNull();
     expect(rowByID[bookmarkID].deletedBookmarkAt).not.toBeNull();
-
-    const conversationID = "conversation-1";
-    const otherConversationID = "conversation-2";
-    seedConversation(controller, { conversationID });
-    seedConversation(controller, { conversationID: otherConversationID });
-    seedMessage(controller, { messageID: "msg-1", conversationID });
-    seedMessage(controller, { messageID: "msg-2", conversationID });
-    seedMessage(controller, {
-      messageID: "msg-3",
-      conversationID: otherConversationID,
-    });
-
-    controller.deleteDMsMarkDeleted(conversationID);
-
-    let conversationRows = exec(
-      controller.db!,
-      "SELECT conversationID, deletedAt FROM conversation",
-      [],
-      "all",
-    ) as { conversationID: string; deletedAt: string | null }[];
-    let messageRows = exec(
-      controller.db!,
-      "SELECT messageID, conversationID, deletedAt FROM message",
-      [],
-      "all",
-    ) as {
-      messageID: string;
-      conversationID: string;
-      deletedAt: string | null;
-    }[];
-
-    const convByID = Object.fromEntries(
-      conversationRows.map((row) => [row.conversationID, row]),
-    );
-    const messagesByID = Object.fromEntries(
-      messageRows.map((row) => [row.messageID, row]),
-    );
-
-    expect(convByID[conversationID].deletedAt).not.toBeNull();
-    expect(convByID[otherConversationID].deletedAt).toBeNull();
-    expect(messagesByID["msg-1"].deletedAt).not.toBeNull();
-    expect(messagesByID["msg-2"].deletedAt).not.toBeNull();
-    expect(messagesByID["msg-3"].deletedAt).toBeNull();
-    expect(controller.progress.conversationsDeleted).toBe(1);
-
-    await controller.deleteDMsMarkAllDeleted();
-
-    conversationRows = exec(
-      controller.db!,
-      "SELECT conversationID, deletedAt FROM conversation",
-      [],
-      "all",
-    ) as { conversationID: string; deletedAt: string | null }[];
-    messageRows = exec(
-      controller.db!,
-      "SELECT messageID, conversationID, deletedAt FROM message",
-      [],
-      "all",
-    ) as {
-      messageID: string;
-      conversationID: string;
-      deletedAt: string | null;
-    }[];
-
-    const updatedConvByID = Object.fromEntries(
-      conversationRows.map((row) => [row.conversationID, row]),
-    );
-    const updatedMessagesByID = Object.fromEntries(
-      messageRows.map((row) => [row.messageID, row]),
-    );
-
-    expect(updatedConvByID[otherConversationID].deletedAt).not.toBeNull();
-    expect(updatedMessagesByID["msg-3"].deletedAt).not.toBeNull();
-    expect(controller.progress.conversationsDeleted).toBe(2);
   });
 });

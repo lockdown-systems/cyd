@@ -44,13 +44,6 @@ export const XAPIFixtures = {
   userTweetsAndReplies_20250404: () =>
     loadFixture("XUserTweetsAndReplies_20250404.json"),
 
-  // DM (Direct Message) responses
-  dmConversation1: () => loadFixture("XAPIDMConversation1.json"),
-  dmConversation2: () => loadFixture("XAPIDMConversation2.json"),
-  dmInboxTimeline1: () => loadFixture("XAPIDMInboxTimeline1.json"),
-  dmInboxTimeline2: () => loadFixture("XAPIDMInboxTimeline2.json"),
-  dmInitialInboxState: () => loadFixture("XAPIDMInitialInboxState.json"),
-
   // Bookmarks response
   bookmarks: () => loadFixture("XBookmarks.json"),
 

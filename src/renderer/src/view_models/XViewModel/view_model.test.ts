@@ -61,8 +61,6 @@ describe("XViewModel", () => {
         likesDeleted: 0,
         bookmarksSaved: 0,
         bookmarksDeleted: 0,
-        conversationsSaved: 0,
-        conversationsDeleted: 0,
         messagesSaved: 0,
         messagesDeleted: 0,
       }),
@@ -77,9 +75,6 @@ describe("XViewModel", () => {
         likesDeleted: 0,
         bookmarksIndexed: 0,
         bookmarksDeleted: 0,
-        conversationsIndexed: 0,
-        conversationsDeleted: 0,
-        messagesIndexed: 0,
         messagesDeleted: 0,
         tweetsArchived: 0,
         tweetsToArchive: 0,
@@ -401,7 +396,7 @@ describe("XViewModel", () => {
       ]);
     });
 
-    it("should create save jobs (tweets, likes, bookmarks, DMs)", async () => {
+    it("should create save jobs (tweets, likes, bookmarks) but no direct-message jobs", async () => {
       vi.mocked(getJobsType).mockReturnValue("saveDeleteData");
       vm.account.xAccount!.saveMyData = true;
       vm.account.xAccount!.archiveTweets = true;
@@ -418,13 +413,11 @@ describe("XViewModel", () => {
         "archiveTweets",
         "indexLikes",
         "indexBookmarks",
-        "indexConversations",
-        "indexMessages",
         "archiveBuild",
       ]);
     });
 
-    it("should create archive jobs (HTML tweets, bookmarks, DMs)", async () => {
+    it("should create archive jobs (HTML tweets, bookmarks) but no direct-message jobs", async () => {
       vi.mocked(getJobsType).mockReturnValue("saveDeleteData");
       vm.account.xAccount!.archiveMyData = true;
       vm.account.xAccount!.archiveTweetsHTML = true;
@@ -437,13 +430,11 @@ describe("XViewModel", () => {
         "login",
         "archiveTweets",
         "indexBookmarks",
-        "indexConversations",
-        "indexMessages",
         "archiveBuild",
       ]);
     });
 
-    it("should create delete jobs (tweets, retweets, likes, bookmarks, unfollowEveryone, DMs)", async () => {
+    it("should create delete jobs (tweets, retweets, likes, bookmarks, unfollowEveryone) but no direct-message job", async () => {
       vi.mocked(getJobsType).mockReturnValue("saveDeleteData");
       vi.mocked(xHasSomeData).mockResolvedValue(true);
       vm.account.xAccount!.deleteMyData = true;
@@ -464,7 +455,6 @@ describe("XViewModel", () => {
         "deleteLikes",
         "deleteBookmarks",
         "unfollowEveryone",
-        "deleteDMs",
         "archiveBuild",
       ]);
     });
@@ -480,7 +470,7 @@ describe("XViewModel", () => {
 
       await vm.defineJobs();
 
-      // Should only have login and unfollowEveryone/deleteDMs (which don't require hasSomeData)
+      // Should only have login and unfollowEveryone (which doesn't require hasSomeData)
       expect(mockElectronX.createJobs).toHaveBeenCalledWith(1, ["login"]);
     });
 

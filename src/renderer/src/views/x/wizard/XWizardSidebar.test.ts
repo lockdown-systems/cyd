@@ -45,7 +45,6 @@ describe("XWizardSidebar", () => {
       likesDeleted: 0,
       bookmarksSaved: 10,
       bookmarksDeleted: 0,
-      conversationsDeleted: 5,
       accountsUnfollowed: 0,
       tweetsMigratedToBluesky: 0,
     });
@@ -351,7 +350,6 @@ describe("XWizardSidebar", () => {
         likesDeleted: 3,
         bookmarksSaved: 20,
         bookmarksDeleted: 2,
-        conversationsDeleted: 10,
         accountsUnfollowed: 5,
         tweetsMigratedToBluesky: 15,
       });

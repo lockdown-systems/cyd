@@ -62,18 +62,12 @@ export async function xGetLastDelete(accountID: number): Promise<Date | null> {
     accountID,
     "lastFinishedJob_unfollowEveryone",
   );
-  const lastFinishedJob_deleteDMs = await window.electron.X.getConfig(
-    accountID,
-    "lastFinishedJob_deleteDMs",
-  );
-
   if (
     lastFinishedJob_deleteTweets ||
     lastFinishedJob_deleteRetweets ||
     lastFinishedJob_deleteLikes ||
     lastFinishedJob_deleteBookmarks ||
-    lastFinishedJob_unfollowEveryone ||
-    lastFinishedJob_deleteDMs
+    lastFinishedJob_unfollowEveryone
   ) {
     const lastFinishedJob_deleteTweets_date = lastFinishedJob_deleteTweets
       ? new Date(lastFinishedJob_deleteTweets)
@@ -91,9 +85,6 @@ export async function xGetLastDelete(accountID: number): Promise<Date | null> {
       lastFinishedJob_unfollowEveryone
         ? new Date(lastFinishedJob_unfollowEveryone)
         : new Date(0);
-    const lastFinishedJob_deleteDMs_date = lastFinishedJob_deleteDMs
-      ? new Date(lastFinishedJob_deleteDMs)
-      : new Date(0);
     return new Date(
       Math.max(
         lastFinishedJob_deleteTweets_date.getTime(),
@@ -101,7 +92,6 @@ export async function xGetLastDelete(accountID: number): Promise<Date | null> {
         lastFinishedJob_deleteLikes_date.getTime(),
         lastFinishedJob_deleteBookmarks_date.getTime(),
         lastFinishedJob_unfollowEveryone_date.getTime(),
-        lastFinishedJob_deleteDMs_date.getTime(),
       ),
     );
   }
@@ -159,13 +149,9 @@ export async function xRequiresPremium(
     requiresPremium = true;
   }
 
-  // Deleting likes, bookmarks, DMs, and unfollowing everyone are premium features
+  // Deleting likes, bookmarks, and unfollowing everyone are premium features
   if (xAccount.deleteLikes) {
     console.log("Requires premium: deleteLikes");
-    requiresPremium = true;
-  }
-  if (xAccount.deleteDMs) {
-    console.log("Requires premium: deleteDMs");
     requiresPremium = true;
   }
   if (xAccount.deleteBookmarks) {

@@ -208,23 +208,6 @@ onMounted(async () => {
                   >)
                 </span>
               </li>
-              <li
-                v-if="
-                  model.account.xAccount?.archiveDMs ||
-                  (model.progress.conversationsIndexed ?? 0) > 0 ||
-                  (model.progress.messagesIndexed ?? 0) > 0
-                "
-              >
-                <i class="fa-solid fa-floppy-disk archive-bullet" />
-                <strong>{{
-                  model.progress.conversationsIndexed.toLocaleString()
-                }}</strong>
-                conversations, including
-                <strong>{{
-                  model.progress.messagesIndexed.toLocaleString()
-                }}</strong>
-                messages
-              </li>
             </ul>
 
             <p>
@@ -244,23 +227,6 @@ onMounted(async () => {
                   model.progress.newTweetsArchived.toLocaleString()
                 }}</strong>
                 tweets saved as HTML archives
-              </li>
-              <li
-                v-if="
-                  model.account.xAccount?.archiveDMs ||
-                  (model.progress.conversationsIndexed ?? 0) > 0 ||
-                  (model.progress.messagesIndexed ?? 0) > 0
-                "
-              >
-                <i class="fa-solid fa-floppy-disk archive-bullet" />
-                <strong>{{
-                  model.progress.conversationsIndexed.toLocaleString()
-                }}</strong>
-                conversations, including
-                <strong>{{
-                  model.progress.messagesIndexed.toLocaleString()
-                }}</strong>
-                messages
               </li>
             </ul>
 
@@ -322,13 +288,6 @@ onMounted(async () => {
                   model.progress.bookmarksDeleted.toLocaleString()
                 }}</strong>
                 bookmarks
-              </li>
-              <li v-if="model.account.xAccount?.deleteDMs">
-                <i class="fa-solid fa-fire delete-bullet" />
-                <strong>{{
-                  model.progress.conversationsDeleted.toLocaleString()
-                }}</strong>
-                direct message conversations
               </li>
               <li v-if="model.account.xAccount?.unfollowEveryone">
                 <i class="fa-solid fa-fire delete-bullet" />
