@@ -164,40 +164,6 @@ describe("jobs_tombstone.ts", () => {
       expect(events[0].type).toBe("change");
     });
 
-    it("should save the banner when X does not open its crop step", async () => {
-      // X only sometimes offers the crop. Seen on 2026-09-15: the probe got it
-      // three times out of three, and a later run got the banner dropped
-      // straight into the dialog ready to save. Waiting for a crop that never
-      // comes turned a run that was about to succeed into an error report.
-      const { TimeoutError } = await import("../automation_failures");
-      vi.spyOn(vm, "waitForSelector").mockImplementation(
-        async (selector: string) => {
-          if (selector === '[data-testid="applyButton"]') {
-            throw new TimeoutError(selector);
-          }
-        },
-      );
-      answerWith(
-        [
-          "https://pbs.twimg.com/profile_banners/1/before",
-          "https://pbs.twimg.com/profile_banners/1/after",
-        ],
-        [],
-      );
-
-      const result = await TombstoneJobs.runJobTombstoneUpdateBanner(vm, 0);
-
-      expect(result).toBe(true);
-      expect(vm.scriptClickElement).not.toHaveBeenCalledWith(
-        '[data-testid="applyButton"]',
-      );
-      expect(vm.scriptClickElement).toHaveBeenCalledWith(
-        'button[data-testid="Profile_Save_Button"]',
-      );
-      expect(vm.finishJob).toHaveBeenCalledWith(0);
-      expect(vm.error).not.toHaveBeenCalled();
-    });
-
     it("should wait for the profile to render its banner before reading it", async () => {
       // X renders the header photo after the load finishes. Reading straight
       // away got "" from both the before and the after read, which match, so a
@@ -258,6 +224,65 @@ describe("jobs_tombstone.ts", () => {
       expect(result).toBe(true);
       expect(vm.finishJob).toHaveBeenCalledWith(0);
       expect(vm.error).not.toHaveBeenCalled();
+    });
+
+    it("should put the banner on again when X offers no crop step", async () => {
+      // Recorded from Cyd's own session: with no crop step the image still
+      // uploads, INIT through FINALIZE, and update_profile_banner.json is
+      // never called at all. Apply is what stages the upload as the banner,
+      // so a run that never sees one saves nothing.
+      const { TimeoutError } = await import("../automation_failures");
+      let cropWaits = 0;
+      vi.spyOn(vm, "waitForSelector").mockImplementation(
+        async (selector: string) => {
+          if (selector === '[data-testid="applyButton"]') {
+            cropWaits += 1;
+            if (cropWaits === 1) {
+              throw new TimeoutError(selector);
+            }
+          }
+        },
+      );
+      answerWith(
+        ["https://pbs.twimg.com/old", "https://pbs.twimg.com/new"],
+        [],
+      );
+
+      const result = await TombstoneJobs.runJobTombstoneUpdateBanner(vm, 0);
+
+      expect(cropWaits).toBeGreaterThan(1);
+      expect(vm.scriptClickElement).toHaveBeenCalledWith(
+        '[data-testid="applyButton"]',
+      );
+      expect(result).toBe(true);
+      expect(vm.error).not.toHaveBeenCalled();
+    });
+
+    it("should say the banner was never staged rather than save without it", async () => {
+      const { TimeoutError } = await import("../automation_failures");
+      vi.spyOn(vm, "waitForSelector").mockImplementation(
+        async (selector: string) => {
+          if (selector === '[data-testid="applyButton"]') {
+            throw new TimeoutError(selector);
+          }
+        },
+      );
+      answerWith(["https://pbs.twimg.com/old"], []);
+
+      const result = await TombstoneJobs.runJobTombstoneUpdateBanner(vm, 0);
+
+      expect(result).toBe(false);
+      // Clicking Save without the crop uploads the image and attaches nothing,
+      // then reports a banner that did not change, which explains none of it.
+      expect(vm.scriptClickElement).not.toHaveBeenCalledWith(
+        'button[data-testid="Profile_Save_Button"]',
+      );
+      expect(vm.error).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          reason: "X never offered its crop step, so the banner was not staged",
+        }),
+      );
     });
 
     it("should report a banner it could not set rather than claiming success", async () => {
