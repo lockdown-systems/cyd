@@ -371,4 +371,363 @@ describe("BlueskyViewModel", () => {
       expect(report).not.toContain("Alice");
     });
   });
+
+  describe("choosing what to save", () => {
+    it("starts with every category off, and never deletes when one is turned off", async () => {
+      const model = createViewModel();
+
+      await model.loadCategorySettings();
+      expect(model.enabledCategories).toEqual([]);
+
+      vi.mocked(window.electron.Bluesky.getCategorySettings).mockResolvedValue({
+        posts: true,
+        reposts: false,
+        likes: true,
+        bookmarks: false,
+      });
+      await model.setCategoryEnabled("posts", true);
+
+      expect(window.electron.Bluesky.setCategoryEnabled).toHaveBeenCalledWith(
+        7,
+        "posts",
+        true,
+      );
+      expect(model.enabledCategories).toEqual(["posts", "likes"]);
+    });
+
+    it("asks what the chosen categories need on disk", async () => {
+      const model = createViewModel();
+      vi.mocked(window.electron.Bluesky.getCategorySettings).mockResolvedValue({
+        posts: true,
+        reposts: false,
+        likes: false,
+        bookmarks: false,
+      });
+
+      await model.loadCategorySettings();
+      await model.refreshPreflight();
+
+      expect(window.electron.Bluesky.storagePreflight).toHaveBeenCalledWith(7, [
+        "posts",
+      ]);
+      expect(model.preflight?.uncertain).toBe(true);
+      expect(model.storageIsInsufficient).toBe(false);
+    });
+
+    it("refuses to start when insufficiency is certain", async () => {
+      const model = createViewModel();
+      vi.mocked(window.electron.Bluesky.getCategorySettings).mockResolvedValue({
+        posts: true,
+        reposts: false,
+        likes: false,
+        bookmarks: false,
+      });
+      vi.mocked(window.electron.Bluesky.storagePreflight).mockResolvedValue({
+        categories: [{ category: "posts", recordCount: 10 }],
+        certainBytes: 2048,
+        estimatedBytes: 4096,
+        availableBytes: 1024,
+        uncertain: false,
+        sufficiency: "insufficient",
+      });
+
+      await model.loadCategorySettings();
+      await model.refreshPreflight();
+      await model.startSaving();
+
+      expect(model.storageIsInsufficient).toBe(true);
+      expect(window.electron.Bluesky.createJobs).not.toHaveBeenCalled();
+    });
+
+    it("makes one job per chosen category, so each one resumes on its own", async () => {
+      const model = createViewModel();
+      vi.mocked(window.electron.Bluesky.getCategorySettings).mockResolvedValue({
+        posts: true,
+        reposts: true,
+        likes: false,
+        bookmarks: true,
+      });
+
+      await model.loadCategorySettings();
+      await model.startSaving();
+
+      expect(window.electron.Bluesky.createJobs).toHaveBeenCalledWith(7, [
+        "savePosts",
+        "saveReposts",
+        "saveBookmarks",
+      ]);
+      expect(model.state).toBe(State.RunJobs);
+    });
+  });
+
+  describe("running save jobs", () => {
+    const pendingJob = (id: number, jobType: string) => ({
+      id,
+      jobType,
+      status: "pending",
+      scheduledAt: new Date(),
+      startedAt: null,
+      finishedAt: null,
+      progressJSON: "",
+      error: null,
+    });
+
+    const finishedResult = (overrides = {}) => ({
+      outcome: "finished" as const,
+      progress: {
+        category: "posts" as const,
+        stage: "done" as const,
+        pagesListed: 2,
+        recordsSaved: 5,
+        mediaSaved: 3,
+        mediaFailed: 1,
+        mediaPending: 1,
+        rateLimitedUntil: null,
+        rateLimitOccurrences: 0,
+        cancelled: false,
+      },
+      errorClass: null,
+      ...overrides,
+    });
+
+    it("runs every pending job and adds up what was saved", async () => {
+      const model = createViewModel();
+      model.jobs = [pendingJob(1, "savePosts"), pendingJob(2, "saveLikes")];
+      vi.mocked(window.electron.Bluesky.runJob).mockResolvedValue(
+        finishedResult(),
+      );
+
+      await model.runJobs();
+
+      expect(window.electron.Bluesky.runJob).toHaveBeenCalledTimes(2);
+      expect(model.progress.recordsSaved).toBe(10);
+      expect(model.progress.mediaSaved).toBe(6);
+      expect(model.progress.mediaFailed).toBe(2);
+      expect(model.state).toBe(State.FinishedRunningJobs);
+    });
+
+    it("stops the run when the disk fills, and says so", async () => {
+      const model = createViewModel();
+      model.jobs = [pendingJob(1, "savePosts"), pendingJob(2, "saveLikes")];
+      vi.mocked(window.electron.Bluesky.runJob).mockResolvedValue(
+        finishedResult({ outcome: "outOfSpace", errorClass: "ENOSPC" }),
+      );
+
+      await model.runJobs();
+
+      expect(window.electron.Bluesky.runJob).toHaveBeenCalledTimes(1);
+      expect(model.saveError).toBe("outOfSpace");
+    });
+
+    it("keeps only the class of a failure, never its message", async () => {
+      const model = createViewModel();
+      model.jobs = [pendingJob(1, "savePosts")];
+      vi.mocked(window.electron.Bluesky.runJob).mockResolvedValue(
+        finishedResult({ outcome: "failed", errorClass: "TypeError" }),
+      );
+
+      await model.runJobs();
+
+      expect(model.saveError).toBe("TypeError");
+    });
+
+    it("a cancelled job ends the run without calling it a failure", async () => {
+      const model = createViewModel();
+      model.jobs = [pendingJob(1, "savePosts"), pendingJob(2, "saveLikes")];
+      vi.mocked(window.electron.Bluesky.runJob).mockResolvedValue(
+        finishedResult({ outcome: "cancelled" }),
+      );
+
+      await model.runJobs();
+
+      expect(window.electron.Bluesky.runJob).toHaveBeenCalledTimes(1);
+      expect(model.saveError).toBe("");
+    });
+
+    it("passes a cancellation to the running job", async () => {
+      const model = createViewModel();
+
+      await model.cancelSaving();
+
+      expect(window.electron.Bluesky.cancelCollection).toHaveBeenCalledWith(7);
+    });
+  });
+
+  describe("carrying on an interrupted save", () => {
+    const pendingJob = () => ({
+      id: 1,
+      jobType: "savePosts",
+      status: "pending",
+      scheduledAt: new Date(),
+      startedAt: null,
+      finishedAt: null,
+      progressJSON: "",
+      error: null,
+    });
+
+    it("picks up work an earlier session left unfinished", async () => {
+      const model = createViewModel();
+      vi.mocked(window.electron.Bluesky.getJobs).mockResolvedValue([
+        pendingJob(),
+      ]);
+
+      await model.init();
+
+      expect(window.electron.Bluesky.getJobs).toHaveBeenCalledWith(
+        7,
+        "pending",
+      );
+      expect(model.hasUnfinishedSave).toBe(true);
+    });
+
+    it("carrying on runs the existing jobs instead of choosing again", async () => {
+      const model = createViewModel();
+      vi.mocked(window.electron.Bluesky.getJobs).mockResolvedValue([
+        pendingJob(),
+      ]);
+      await model.init();
+
+      await model.resumeSaving();
+
+      expect(model.state).toBe(State.RunJobs);
+      expect(window.electron.Bluesky.createJobs).not.toHaveBeenCalled();
+    });
+
+    it("offers nothing to carry on when there is no unfinished work", async () => {
+      const model = createViewModel();
+
+      await model.init();
+      await model.resumeSaving();
+
+      expect(model.hasUnfinishedSave).toBe(false);
+      expect(model.state).toBe(State.BlueskyWizardDashboard);
+    });
+  });
+
+  describe("browsing saved data", () => {
+    const page = (overrides = {}) => ({
+      category: "posts" as const,
+      records: [],
+      nextCursor: null,
+      totalRecords: 0,
+      ...overrides,
+    });
+
+    it("reads a category from local storage, newest first", async () => {
+      const model = createViewModel();
+      vi.mocked(window.electron.Bluesky.browse).mockResolvedValue(
+        page({ totalRecords: 3 }),
+      );
+
+      await model.browse("likes");
+
+      expect(window.electron.Bluesky.browse).toHaveBeenCalledWith(
+        7,
+        "likes",
+        null,
+      );
+      expect(model.browseCategory).toBe("likes");
+      expect(model.browsePage?.totalRecords).toBe(3);
+      expect(model.isBrowsingNewest).toBe(true);
+    });
+
+    it("walks to older pages and back to the newest", async () => {
+      const model = createViewModel();
+      vi.mocked(window.electron.Bluesky.browse).mockResolvedValue(
+        page({ nextCursor: "cursor-1" }),
+      );
+
+      await model.browse("posts");
+      await model.browseOlder();
+
+      expect(window.electron.Bluesky.browse).toHaveBeenLastCalledWith(
+        7,
+        "posts",
+        "cursor-1",
+      );
+      expect(model.isBrowsingNewest).toBe(false);
+
+      await model.browseNewest();
+
+      expect(window.electron.Bluesky.browse).toHaveBeenLastCalledWith(
+        7,
+        "posts",
+        null,
+      );
+      expect(model.isBrowsingNewest).toBe(true);
+    });
+
+    it("finds where each asset on the page is stored, so media reads off disk", async () => {
+      const model = createViewModel();
+      vi.mocked(window.electron.Bluesky.browse).mockResolvedValue(
+        page({
+          records: [
+            {
+              uri: "at://did:plc:examplealice/app.bsky.feed.post/a",
+              recordType: "app.bsky.feed.post",
+              cid: "bafya",
+              indexedAt: null,
+              firstObservedAt: "2026-01-01T00:00:00.000Z",
+              observedAt: "2026-01-01T00:00:00.000Z",
+              createdAt: "2026-01-01T00:00:00.000Z",
+              text: "A post",
+              sourceDeletedAt: null,
+              author: {
+                profileID: "profile-1",
+                did: "did:plc:examplealice",
+                handle: "alice.test",
+                displayName: "Alice",
+                avatar: null,
+              },
+              assets: [
+                {
+                  id: "asset-1",
+                  kind: "image" as const,
+                  mediaType: "image/jpeg",
+                  availability: "available" as const,
+                  unavailableReason: null,
+                  byteCount: 10,
+                  digest: "digest-1",
+                  width: null,
+                  height: null,
+                  altText: null,
+                },
+              ],
+              subject: null,
+              context: [],
+              sourceURL: null,
+            },
+          ],
+        }),
+      );
+      vi.mocked(window.electron.Bluesky.getMediaPath).mockResolvedValue(
+        "/tmp/media/digest-1",
+      );
+
+      await model.browse("posts");
+
+      expect(window.electron.Bluesky.getMediaPath).toHaveBeenCalledWith(
+        7,
+        "digest-1",
+      );
+      expect(model.browseMediaPaths).toEqual({
+        "digest-1": "/tmp/media/digest-1",
+      });
+    });
+
+    it("reports a failure to read saved data without quoting it", async () => {
+      const model = createViewModel();
+      vi.mocked(window.electron.Bluesky.browse).mockRejectedValue(
+        new TypeError("failed reading /home/alice/.cyd/Bluesky/data.sqlite3"),
+      );
+
+      await model.browse("posts");
+
+      expect(model.browsePage).toBeNull();
+      const args = vi.mocked(window.electron.database.createErrorReport).mock
+        .calls[0];
+      expect(args[2]).toBe(AutomationErrorType.bluesky_browseError);
+      expect(`${args[3]}${args[6]}`).not.toContain("/home/alice");
+    });
+  });
 });

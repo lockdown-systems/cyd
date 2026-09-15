@@ -151,6 +151,62 @@ export const storeBlueskyMediaFile = (
 };
 
 /**
+ * Write bytes into the media store through a staging file.
+ *
+ * The staging write is where a full disk lands, so a run that exhausts the
+ * volume leaves a partial file in staging — which is disposable — instead of a
+ * truncated asset sitting at the path its digest promises. The rename into
+ * place is atomic, because staging and the media store are inside the same
+ * account directory and therefore the same filesystem.
+ */
+export const storeBlueskyMediaFileVia = (
+  mediaPath: string,
+  stagingDirectory: string,
+  data: Buffer,
+): StoredMediaFile => {
+  const digest = sha256Digest(data);
+  const assetPath = blueskyMediaPath(mediaPath, digest);
+  if (fs.existsSync(assetPath)) {
+    return {
+      digest,
+      byteLength: data.length,
+      path: assetPath,
+      deduplicated: true,
+    };
+  }
+
+  ensureOwnerOnlyDirectory(stagingDirectory);
+  const stagedPath = path.join(stagingDirectory, `${digest}.part`);
+  fs.writeFileSync(stagedPath, data, { mode: OWNER_ONLY_FILE });
+
+  ensureOwnerOnlyDirectory(path.dirname(assetPath));
+  fs.renameSync(stagedPath, assetPath);
+  ensureOwnerOnlyFile(assetPath);
+
+  return {
+    digest,
+    byteLength: data.length,
+    path: assetPath,
+    deduplicated: false,
+  };
+};
+
+/**
+ * Free space on the volume holding this path, or null when the platform will
+ * not say. An unknown capacity is reported as unknown rather than guessed,
+ * because a wrong number here would either refuse a run that fits or promise
+ * one that cannot.
+ */
+export const blueskyAvailableBytes = (target: string): number | null => {
+  try {
+    const stats = fs.statfsSync(target);
+    return Number(stats.bavail) * Number(stats.bsize);
+  } catch {
+    return null;
+  }
+};
+
+/**
  * Create an isolated scratch directory for one piece of in-progress work.
  * Staging data is disposable: nothing outside it may depend on it.
  */
