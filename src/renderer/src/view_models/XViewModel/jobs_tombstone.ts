@@ -269,6 +269,15 @@ export async function runJobTombstoneUpdateBio(
     return false;
   }
 
+  // Cyd's saved copy of the bio is written at login and nowhere else, and the
+  // tombstone page pre-fills from it. Left stale, that page comes back
+  // offering the bio this job just replaced. The value read back off X is the
+  // one worth keeping, since it is what X actually holds.
+  if (vm.account.xAccount) {
+    vm.account.xAccount.bio = savedBio;
+    await window.electron.database.saveAccount(JSON.stringify(vm.account));
+  }
+
   await vm.finishJob(jobIndex);
   return true;
 }

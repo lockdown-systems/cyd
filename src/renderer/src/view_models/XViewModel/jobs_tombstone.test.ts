@@ -237,6 +237,30 @@ describe("jobs_tombstone.ts", () => {
       expect(vm.error).not.toHaveBeenCalled();
     });
 
+    it("should save the new bio, so the wizard stops offering the old one", async () => {
+      // The tombstone page pre-fills from the bio Cyd has saved, which is
+      // written at login and nowhere else. Leaving it stale meant coming back
+      // to the page and being offered the bio the tombstone had replaced.
+      vm.account.xAccount!.bio = "Seeded test account.";
+      answerWith([], ["Gone to Bluesky"]);
+
+      const result = await TombstoneJobs.runJobTombstoneUpdateBio(vm, 0);
+
+      expect(result).toBe(true);
+      expect(vm.account.xAccount!.bio).toBe("Gone to Bluesky");
+      expect(window.electron.database.saveAccount).toHaveBeenCalled();
+    });
+
+    it("should leave the saved bio alone when the change did not land", async () => {
+      vm.account.xAccount!.bio = "Seeded test account.";
+      answerWith([], ["Seeded test account."]);
+
+      const result = await TombstoneJobs.runJobTombstoneUpdateBio(vm, 0);
+
+      expect(result).toBe(false);
+      expect(vm.account.xAccount!.bio).toBe("Seeded test account.");
+    });
+
     it("should report a bio that did not change rather than finishing", async () => {
       answerWith([], ["Seeded test account."]);
 
