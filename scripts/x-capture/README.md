@@ -4,7 +4,7 @@ Tooling for the capture sessions that establish how X behaves today
 (lockdown-systems/cyd#709). It is not part of the Cyd build: nothing here is
 imported by the app, and the root `package.json` does not depend on it.
 
-Three pieces:
+Four pieces:
 
 - **`seed.ts`** drives a real Chromium to fill a test account with enough data,
   and enough awkward data, to make a capture worth running.
@@ -13,6 +13,8 @@ Three pieces:
   and empty-state signals.
 - **`promote-fixture.ts`** copies the few decoded responses the tests need into
   `testdata/x/`, using the existing dated filename convention.
+- **`probe-profile.ts`** settles how X's "Edit profile" dialog takes a change,
+  for the tombstone jobs that update the banner and bio.
 
 The walk itself is `docs/x-capture/capture-walk-20260914.md`. The element
 inventory it fills in is `docs/x-capture/element-inventory-20260914.md`.
@@ -188,6 +190,44 @@ capture.
 Only the referrer is kept from the request headers, so no cookies or
 authorization tokens reach the decoded output. Response bodies are kept whole,
 because their shape is the point — check a fixture before committing it.
+
+## Probing the profile dialog
+
+The tombstone jobs put a banner on the profile dialog's file input and type a
+bio into its textarea, then click Save. Both reported success and saved
+nothing, which is the shape of a change X's own code never saw: the DOM holds
+the new value, React's state does not, and Save stays inert.
+
+Rather than guess which way of making the change X notices, try each one and
+watch what X does:
+
+```
+./scripts/x-capture/make-media.sh
+npx tsx scripts/x-capture/probe-profile.ts --account <handle>
+```
+
+For each way of delivering a banner — the way Cyd does it today, the same with
+an `input` event as well, and the browser's own file delivery — and each way of
+typing a bio — real key events, React's native value setter, a plain `.value`
+assignment as the control — it records:
+
+- whether the Save button came out of its disabled state,
+- for the banner, whether X opened its crop step at all,
+- which requests X made when Save was clicked, and what they returned,
+- whether the value survived a reload.
+
+The last one is the answer. A Save button that enables and a request that
+returns 200 still prove nothing if the profile comes back unchanged. The report
+lands in `capture/<date>/profile-probe.md`.
+
+Pass `--only banner` or `--only bio` to run one half, and `--banner <path>` to
+use a particular image.
+
+Unlike the walk, this **writes to the account**: it changes the bio three
+times and the banner up to three times. Use the capture account, and expect to
+re-seed it. It also logs every request the page makes to X, including the
+`upload.twitter.com` media upload that the HAR tooling filters out — which is
+the one call most worth seeing when a banner does not arrive.
 
 ## Promoting fixtures
 
