@@ -21,10 +21,11 @@ describe("helpers_unfollow.ts", () => {
 
     vi.spyOn(vm, "log").mockReturnValue(undefined);
     vi.spyOn(vm, "waitForSelector").mockResolvedValue(undefined);
-    vi.spyOn(vm, "scriptMouseoverElementNth").mockResolvedValue(true);
-    vi.spyOn(vm, "scriptClickElementNth").mockResolvedValue(true);
+    vi.spyOn(vm, "scriptMouseoverElementFirst").mockResolvedValue(true);
+    vi.spyOn(vm, "scriptClickElementFirst").mockResolvedValue(true);
     vi.spyOn(vm, "scriptClickElement").mockResolvedValue(true);
     vi.spyOn(vm, "waitForRateLimit").mockResolvedValue(undefined);
+    vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
   });
 
   afterEach(() => {
@@ -55,20 +56,18 @@ describe("helpers_unfollow.ts", () => {
 
   describe("unfollowEveryoneUnfollowAccount", () => {
     it("should successfully unfollow an account", async () => {
-      const result = await DeleteHelpers.unfollowEveryoneUnfollowAccount(vm, 0);
+      const result = await DeleteHelpers.unfollowEveryoneUnfollowAccount(vm);
 
       expect(result).toEqual({
         success: true,
         shouldRetry: false,
         shouldReload: false,
       });
-      expect(vm.scriptMouseoverElementNth).toHaveBeenCalledWith(
+      expect(vm.scriptMouseoverElementFirst).toHaveBeenCalledWith(
         '[data-testid$="-unfollow"]',
-        0,
       );
-      expect(vm.scriptClickElementNth).toHaveBeenCalledWith(
+      expect(vm.scriptClickElementFirst).toHaveBeenCalledWith(
         '[data-testid$="-unfollow"]',
-        0,
       );
       expect(vm.waitForSelector).toHaveBeenCalledWith(
         'button[data-testid="confirmationSheetConfirm"]',
@@ -81,9 +80,9 @@ describe("helpers_unfollow.ts", () => {
     });
 
     it("should fail if mouseover fails", async () => {
-      vi.spyOn(vm, "scriptMouseoverElementNth").mockResolvedValue(false);
+      vi.spyOn(vm, "scriptMouseoverElementFirst").mockResolvedValue(false);
 
-      const result = await DeleteHelpers.unfollowEveryoneUnfollowAccount(vm, 0);
+      const result = await DeleteHelpers.unfollowEveryoneUnfollowAccount(vm);
 
       expect(result).toEqual({
         success: false,
@@ -93,9 +92,9 @@ describe("helpers_unfollow.ts", () => {
     });
 
     it("should fail if click following button fails", async () => {
-      vi.spyOn(vm, "scriptClickElementNth").mockResolvedValue(false);
+      vi.spyOn(vm, "scriptClickElementFirst").mockResolvedValue(false);
 
-      const result = await DeleteHelpers.unfollowEveryoneUnfollowAccount(vm, 0);
+      const result = await DeleteHelpers.unfollowEveryoneUnfollowAccount(vm);
 
       expect(result).toEqual({
         success: false,
@@ -111,7 +110,7 @@ describe("helpers_unfollow.ts", () => {
         rateLimitReset: 0,
       });
 
-      const result = await DeleteHelpers.unfollowEveryoneUnfollowAccount(vm, 0);
+      const result = await DeleteHelpers.unfollowEveryoneUnfollowAccount(vm);
 
       expect(result).toEqual({
         success: false,
@@ -128,7 +127,7 @@ describe("helpers_unfollow.ts", () => {
         rateLimitReset: 0,
       });
 
-      const result = await DeleteHelpers.unfollowEveryoneUnfollowAccount(vm, 0);
+      const result = await DeleteHelpers.unfollowEveryoneUnfollowAccount(vm);
 
       expect(result).toEqual({
         success: false,
@@ -144,7 +143,7 @@ describe("helpers_unfollow.ts", () => {
         rateLimitReset: 0,
       });
 
-      const result = await DeleteHelpers.unfollowEveryoneUnfollowAccount(vm, 0);
+      const result = await DeleteHelpers.unfollowEveryoneUnfollowAccount(vm);
 
       expect(result).toEqual({
         success: false,
@@ -166,33 +165,33 @@ describe("helpers_unfollow.ts", () => {
     it("should return success when finished", async () => {
       vm.progress.isUnfollowEveryoneFinished = true;
 
-      const result = await DeleteHelpers.unfollowEveryoneProcessIteration(
-        vm,
-        0,
-        100,
-      );
+      const result = await DeleteHelpers.unfollowEveryoneProcessIteration(vm);
 
       expect(result).toEqual({
         success: true,
         errorTriggered: false,
         errorType: null,
         shouldReload: false,
-        newAccountIndex: 0,
       });
     });
 
-    it("should successfully unfollow an account and increment index", async () => {
+    it("should always unfollow the first account in the list", async () => {
+      // X swaps the unfollowed account's button from "-unfollow" to "-follow",
+      // so the rest of the list shifts up. Walking an index would skip every
+      // other account.
       vm.progress.isUnfollowEveryoneFinished = false;
 
-      const result = await DeleteHelpers.unfollowEveryoneProcessIteration(
-        vm,
-        5,
-        100,
-      );
+      const result = await DeleteHelpers.unfollowEveryoneProcessIteration(vm);
 
       expect(result.success).toBe(true);
       expect(result.errorTriggered).toBe(false);
-      expect(result.newAccountIndex).toBe(6); // Should increment after successful unfollow
+      expect(result.shouldReload).toBe(false);
+      expect(vm.scriptMouseoverElementFirst).toHaveBeenCalledWith(
+        '[data-testid$="-unfollow"]',
+      );
+      expect(vm.scriptClickElementFirst).toHaveBeenCalledWith(
+        '[data-testid$="-unfollow"]',
+      );
       expect(vm.progress.accountsUnfollowed).toBe(1);
       expect(mockElectron.X.setConfig).toHaveBeenCalledWith(
         1,
@@ -201,36 +200,30 @@ describe("helpers_unfollow.ts", () => {
       );
     });
 
-    it("should reload and reset index when reaching end", async () => {
+    it("should reload when no accounts are left on the page", async () => {
       vm.progress.isUnfollowEveryoneFinished = false;
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
 
-      const result = await DeleteHelpers.unfollowEveryoneProcessIteration(
-        vm,
-        99,
-        100,
-      );
+      const result = await DeleteHelpers.unfollowEveryoneProcessIteration(vm);
 
+      expect(result.success).toBe(true);
       expect(result.shouldReload).toBe(true);
-      expect(result.newAccountIndex).toBe(0);
     });
 
     it("should handle unfollow failure", async () => {
       vm.progress.isUnfollowEveryoneFinished = false;
-      vi.spyOn(vm, "scriptMouseoverElementNth").mockResolvedValue(false);
+      vi.spyOn(vm, "scriptMouseoverElementFirst").mockResolvedValue(false);
 
-      const result = await DeleteHelpers.unfollowEveryoneProcessIteration(
-        vm,
-        0,
-        100,
-      );
+      const result = await DeleteHelpers.unfollowEveryoneProcessIteration(vm);
 
       expect(result.errorTriggered).toBe(true);
       expect(result.errorType).toBe(
         AutomationErrorType.x_runJob_unfollowEveryone_MouseoverFailed,
       );
+      expect(result.shouldReload).toBe(true);
     });
 
-    it("should not trigger an error and should keep the same index when rate limited", async () => {
+    it("should not trigger an error when rate limited", async () => {
       // Rate limited after clicking confirm: the account wasn't actually unfollowed,
       // so the job must retry it rather than report an error or move on.
       vm.progress.isUnfollowEveryoneFinished = false;
@@ -239,34 +232,15 @@ describe("helpers_unfollow.ts", () => {
         rateLimitReset: 0,
       });
 
-      const result = await DeleteHelpers.unfollowEveryoneProcessIteration(
-        vm,
-        7,
-        100,
-      );
+      const result = await DeleteHelpers.unfollowEveryoneProcessIteration(vm);
 
       expect(result.success).toBe(false);
       expect(result.errorTriggered).toBe(false);
       expect(result.errorType).toBe(null);
       expect(result.shouldReload).toBe(true);
-      expect(result.newAccountIndex).toBe(7); // Same account gets retried
       expect(vm.waitForRateLimit).toHaveBeenCalled();
       // The account should not be counted as unfollowed
       expect(vm.progress.accountsUnfollowed).toBe(0);
-    });
-
-    it("should keep same index when reload needed on error", async () => {
-      vm.progress.isUnfollowEveryoneFinished = false;
-      vi.spyOn(vm, "scriptMouseoverElementNth").mockResolvedValue(false);
-
-      const result = await DeleteHelpers.unfollowEveryoneProcessIteration(
-        vm,
-        10,
-        100,
-      );
-
-      expect(result.newAccountIndex).toBe(10); // Index stays the same on failure
-      expect(result.shouldReload).toBe(true);
     });
   });
 });

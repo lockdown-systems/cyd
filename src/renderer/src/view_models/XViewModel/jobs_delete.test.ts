@@ -43,6 +43,7 @@ describe("jobs_delete.ts", () => {
       true,
     );
     vi.spyOn(vm, "scriptClickElementNth").mockResolvedValue(true);
+    vi.spyOn(vm, "scriptClickElementFirst").mockResolvedValue(true);
     vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
     vi.spyOn(vm, "waitForSelectorWithinSelector").mockResolvedValue(undefined);
   });
@@ -835,7 +836,9 @@ describe("jobs_delete.ts", () => {
         }
         throw new TimeoutError("Timeout");
       });
-      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
+      // The unfollowed account's button becomes a "-follow" button, so the
+      // page has nothing left to unfollow and gets reloaded
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
       mockElectron.X.isRateLimited.mockResolvedValue({
         isRateLimited: false,
         rateLimitReset: 0,
@@ -844,18 +847,17 @@ describe("jobs_delete.ts", () => {
       const result = await DeleteJobs.runJobUnfollowEveryone(vm, 0);
 
       expect(result).toBe(true);
+      expect(vm.progress.accountsUnfollowed).toBe(1);
       // X's own identifier for the Following button, rather than the button
       // inside the button inside the cell
       expect(vm.countSelectorsFound).toHaveBeenCalledWith(
         '[data-testid$="-unfollow"]',
       );
-      expect(vm.scriptMouseoverElementNth).toHaveBeenCalledWith(
+      expect(vm.scriptMouseoverElementFirst).toHaveBeenCalledWith(
         '[data-testid$="-unfollow"]',
-        0,
       );
-      expect(vm.scriptClickElementNth).toHaveBeenCalledWith(
+      expect(vm.scriptClickElementFirst).toHaveBeenCalledWith(
         '[data-testid$="-unfollow"]',
-        0,
       );
       expect(vm.scriptClickElement).toHaveBeenCalledWith(
         'button[data-testid="confirmationSheetConfirm"]',
@@ -935,7 +937,7 @@ describe("jobs_delete.ts", () => {
       });
       vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
       // Mouseover fails, triggering error
-      vi.spyOn(vm, "scriptMouseoverElementNth").mockResolvedValue(false);
+      vi.spyOn(vm, "scriptMouseoverElementFirst").mockResolvedValue(false);
       mockElectron.X.isRateLimited.mockResolvedValue({
         isRateLimited: false,
         rateLimitReset: 0,
@@ -971,7 +973,7 @@ describe("jobs_delete.ts", () => {
         }
         throw new TimeoutError("Timeout");
       });
-      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
       mockElectron.X.isRateLimited.mockResolvedValue({
         isRateLimited: false,
         rateLimitReset: 0,

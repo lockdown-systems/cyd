@@ -14,7 +14,6 @@ import {
   deleteBookmarkItem,
   unfollowEveryoneProcessIteration,
   unfollowEveryoneLoadPage,
-  UNFOLLOW_BUTTON_SELECTOR,
 } from "./jobs_delete/index";
 
 export async function runJobDeleteTweets(
@@ -425,8 +424,6 @@ export async function runJobUnfollowEveryone(
   let tries: number;
   let errorTriggered = false;
   let reloadFollowingPage = true;
-  let numberOfAccountsToUnfollow = 0;
-  let accountToUnfollowIndex = 0;
 
   vm.showBrowser = true;
   vm.instructions = vm.t("viewModels.x.jobs.delete.unfollowEveryone");
@@ -448,23 +445,12 @@ export async function runJobUnfollowEveryone(
           return false;
         }
         reloadFollowingPage = false;
-
-        // Count the number of accounts to unfollow in the DOM
-        numberOfAccountsToUnfollow = await vm.countSelectorsFound(
-          UNFOLLOW_BUTTON_SELECTOR,
-        );
-        accountToUnfollowIndex = 0;
       }
 
       // Process one unfollow iteration
-      const result = await unfollowEveryoneProcessIteration(
-        vm,
-        accountToUnfollowIndex,
-        numberOfAccountsToUnfollow,
-      );
+      const result = await unfollowEveryoneProcessIteration(vm);
 
       if (result.success) {
-        accountToUnfollowIndex = result.newAccountIndex;
         reloadFollowingPage = result.shouldReload;
 
         if (vm.progress.isUnfollowEveryoneFinished) {
