@@ -247,7 +247,6 @@ async function runAction(
     case "retweet":
       await retweetPost(page, requireTarget(action));
       break;
-    case "longform":
     case "retweet-to-orphan":
       // Handled above, before the switch.
       break;

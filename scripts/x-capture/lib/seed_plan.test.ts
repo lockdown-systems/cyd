@@ -104,7 +104,6 @@ describe("kinds", () => {
   });
 
   test("names the kinds a person has to do", () => {
-    expect(isManualKind("longform")).toBe(true);
     expect(isManualKind("retweet-to-orphan")).toBe(true);
     expect(isManualKind("post")).toBe(false);
   });
@@ -115,7 +114,6 @@ describe("buildSeedPlan", () => {
     const counts = summarizePlan(buildSeedPlan(options()));
     expect(counts.thread).toBe(1);
     expect(counts.poll).toBe(1);
-    expect(counts.longform).toBe(1);
     expect(counts.link).toBe(1);
     expect(counts.quote).toBe(1);
     expect(counts.retweet).toBe(1);

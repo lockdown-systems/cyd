@@ -28,7 +28,7 @@ describe("parsePermalinks", () => {
   test("skips shapes that were never found", () => {
     const markdown = [
       "- [ ] Poll: https://x.com/someone/status/1",
-      "- [ ] Long-form: **not found on the timeline**",
+      "- [ ] Link card: **not found on the timeline**",
     ].join("\n");
     expect(parsePermalinks(markdown)).toHaveLength(1);
   });
