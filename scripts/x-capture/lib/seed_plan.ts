@@ -14,7 +14,6 @@ export type SeedActionKind =
   | "thread"
   | "poll"
   | "media"
-  | "longform"
   | "link"
   | "quote"
   | "retweet"
@@ -32,10 +31,10 @@ export const BULK_KINDS: SeedActionKind[] = [
 ];
 
 /**
- * Kinds no script can do on its own: the long-form composer needs premium, and
- * an orphaned retweet needs a second account to delete the original from.
+ * Kinds no script can do on its own: an orphaned retweet needs a second
+ * account to delete the original from.
  */
-export const MANUAL_KINDS: SeedActionKind[] = ["longform", "retweet-to-orphan"];
+export const MANUAL_KINDS: SeedActionKind[] = ["retweet-to-orphan"];
 
 export function isBulkKind(kind: SeedActionKind): boolean {
   return BULK_KINDS.includes(kind);
@@ -167,23 +166,6 @@ function awkwardShapes(options: SeedPlanOptions): SeedAction[] {
       note: "Post with a link card",
       text: `Cyd seed link card ${dateStamp}: https://cyd.social/`,
     },
-    {
-      id: "longform-001",
-      kind: "longform",
-      note: "Long-form post. Posted by hand: X's long-form composer needs premium, and the ordinary composer will not take it",
-      text: [
-        `Cyd seed long-form post ${dateStamp}.`,
-        "",
-        "This post exists to exercise the long-form note shape, where the body is",
-        "carried outside the ordinary post text field and the timeline entry is",
-        "truncated. It has to be long enough that X treats it as long-form rather",
-        "than an ordinary post, so it runs past the usual character limit and keeps",
-        "going for several paragraphs.",
-        "",
-        "Everything here is seeded test content on a test account and is safe to",
-        "delete at any point during the capture walk.",
-      ].join("\n"),
-    },
   ];
 
   targetUrls.slice(0, 2).forEach((targetUrl, index) => {
@@ -305,7 +287,6 @@ export const SHAPE_MARKERS: { label: string; pattern: RegExp }[] = [
   { label: "Poll", pattern: /Cyd seed poll/ },
   { label: "Link card", pattern: /Cyd seed link card/ },
   { label: "Quote post", pattern: /Cyd seed quote post/ },
-  { label: "Long-form", pattern: /Cyd seed long-form/ },
 ];
 
 /** The shape a timeline entry is, or null if it is not a seeded shape. */

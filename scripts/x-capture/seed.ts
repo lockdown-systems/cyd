@@ -211,9 +211,6 @@ function requireTarget(action: SeedAction): string {
 }
 
 interface FeedState {
-  liked: number;
-  bookmarked: number;
-  followed: number;
   actionsSinceReload: number;
 }
 
@@ -247,35 +244,28 @@ async function runAction(
     case "retweet":
       await retweetPost(page, requireTarget(action));
       break;
-    case "longform":
     case "retweet-to-orphan":
       // Handled above, before the switch.
       break;
     case "like":
       if (feed.actionsSinceReload === 0) {
         await page.goto(feedUrl, { waitUntil: "domcontentloaded" });
-        feed.liked = 0;
       }
-      await actOnNextPost(page, "like", feed.liked);
-      feed.liked += 1;
+      await actOnNextPost(page, "like");
       break;
     case "bookmark":
       if (feed.actionsSinceReload === 0) {
         await page.goto(feedUrl, { waitUntil: "domcontentloaded" });
-        feed.bookmarked = 0;
       }
-      await actOnNextPost(page, "bookmark", feed.bookmarked);
-      feed.bookmarked += 1;
+      await actOnNextPost(page, "bookmark");
       break;
     case "follow":
       if (feed.actionsSinceReload === 0) {
         await page.goto("https://x.com/i/connect_people", {
           waitUntil: "domcontentloaded",
         });
-        feed.followed = 0;
       }
-      await followNextAccount(page, feed.followed);
-      feed.followed += 1;
+      await followNextAccount(page);
       break;
   }
 }
@@ -350,12 +340,7 @@ async function main() {
     return;
   }
 
-  const feed: FeedState = {
-    liked: 0,
-    bookmarked: 0,
-    followed: 0,
-    actionsSinceReload: 0,
-  };
+  const feed: FeedState = { actionsSinceReload: 0 };
 
   for (const action of plan) {
     if (progress.isDone(action.id)) {

@@ -9,6 +9,7 @@ import { Agent } from "@atproto/api";
 import { Record as BskyPostRecord } from "@atproto/api/dist/client/types/app/bsky/feed/post";
 
 import { getAccountDataPath } from "../util";
+import { RequestLog } from "../request_log";
 import {
   XAccount,
   XJob,
@@ -82,6 +83,8 @@ export class XAccountController extends BaseAccountController<XProgress> {
 
   private blueskyService: BlueskyService | null = null;
 
+  private requestLog: RequestLog;
+
   constructor(accountID: number, mitmController: IMITMController) {
     super(accountID, mitmController);
     // Initialize progress with X-specific type
@@ -89,7 +92,23 @@ export class XAccountController extends BaseAccountController<XProgress> {
 
     // Monitor web request metadata for X-specific functionality
     const ses = session.fromPartition(`persist:account-${this.accountID}`);
+
+    // Off unless CYD_REQUEST_LOG says otherwise. See src/request_log.ts.
+    this.requestLog = new RequestLog(this.accountID);
+    if (this.requestLog.enabled) {
+      log.info(
+        `XAccountController: recording requests for account ${this.accountID} to ${process.env.CYD_REQUEST_LOG}`,
+      );
+    }
+
     ses.webRequest.onCompleted((details) => {
+      this.requestLog.record({
+        method: details.method,
+        url: details.url,
+        statusCode: details.statusCode,
+        fromCache: details.fromCache,
+      });
+
       // Learn the operation identifiers X is using right now
       this.observeGraphqlOperation(details.url);
 

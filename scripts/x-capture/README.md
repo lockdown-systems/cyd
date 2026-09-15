@@ -122,15 +122,13 @@ post. `--count N` overrides how many filler posts, likes, and bookmarks to
 make; the default is 61 each, which clears three pages of twenty. The default
 follow count is 21, enough for the following list to page once.
 
-Two steps stop and ask you to do them in the open browser window, then
-continue:
+One step stops and asks you to do it in the open browser window, then
+continues:
 
-- **The long-form post** needs a premium account and X's own long-form
-  composer, which the ordinary composer will not stand in for.
 - **The orphaned retweet** needs two accounts: retweet a post from the second
   test account, then delete it from that account.
 
-Both are recorded as manual steps rather than as selector failures, so they do
+It is recorded as a manual step rather than as a selector failure, so it does
 not pollute the selector evidence.
 
 ### When it stops
@@ -275,9 +273,8 @@ Two shapes were deliberately **not** promoted:
   so there is no JSON body to promote. The status and the `x-rate-limit-*`
   headers are what a test needs, and they are in
   `GraphQLResponses.rateLimitError`.
-- **The long-form post, and a rate limit disguised as a success.** Neither was
-  observed, so neither has a fixture. Inventing one would assert a shape this
-  capture cannot vouch for.
+- **A rate limit disguised as a success.** Never observed, so it has no
+  fixture. Inventing one would assert a shape this capture cannot vouch for.
 
 `src/renderer/src/view_models/XViewModel/test_fixtures.test.ts` asserts what
 each fixture shows, so the findings do not drift away from the files.

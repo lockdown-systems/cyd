@@ -13,6 +13,12 @@ import type { Page } from "playwright-core";
 export const SELECTORS = {
   // Composing
   composerTextarea: '[data-testid="tweetTextarea_0"]',
+  // X opens /compose/post as a modal over the home timeline, whose own inline
+  // composer carries the same test identifier. Waiting on the unscoped
+  // selector re-resolves to that inline composer the moment the modal closes,
+  // so it never reports detached and every successful post looks like a
+  // failure. Waiting for the modal's own field is what says the post landed.
+  composerDialogTextarea: '[role="dialog"] [data-testid="tweetTextarea_0"]',
   composerTextareaNth: (index: number) =>
     `[data-testid="tweetTextarea_${index}"]`,
   composerFileInput: 'input[data-testid="fileInput"]',
@@ -215,7 +221,7 @@ async function submitComposer(page: Page) {
   }
 
   const composerClosed = page
-    .locator(SELECTORS.composerTextarea)
+    .locator(SELECTORS.composerDialogTextarea)
     .first()
     .waitFor({ state: "detached", timeout: 20000 })
     .then(() => "closed" as const)
@@ -348,31 +354,49 @@ async function clickNthAfterScrolling(
   await assertNotBlocked(page);
   const buttons = page.locator(selector);
 
-  for (let attempt = 0; attempt < 8; attempt++) {
+  // Every fifteen actions the seeder reloads the feed, which puts it back at
+  // the top — above everything it has already acted on. Finding the next post
+  // to act on then means scrolling past all of them, so how far this has to
+  // reach grows with the count. An image-heavy feed makes that worse: a single
+  // photo post runs to most of a screen, so forty already-liked posts can sit
+  // tens of thousands of pixels down. Reaching short of them looks exactly
+  // like a selector X has changed.
+  for (let attempt = 0; attempt < 40; attempt++) {
     if ((await buttons.count()) > index) {
       await buttons.nth(index).scrollIntoViewIfNeeded();
       await buttons.nth(index).click();
       return;
     }
-    await page.mouse.wheel(0, 2000);
+    await page.mouse.wheel(0, 4000);
     await page.waitForTimeout(1500);
   }
 
   throw new SelectorMissingError(selector);
 }
 
-export async function actOnNextPost(
-  page: Page,
-  action: "like" | "bookmark",
-  alreadyDone: number,
-) {
+/**
+ * Acts on the first post still offering the action, rather than counting how
+ * many have been done and reaching for that index.
+ *
+ * X virtualizes the timeline, dropping posts out of the DOM once they are
+ * scrolled well past, so the number rendered stays roughly flat however far
+ * down the feed you are. A liked post also leaves the `like` selector
+ * entirely, since its test identifier flips to `unlike`. Counting upwards
+ * against that meant the index climbed while the count did not, and past
+ * eight or so actions it could never be reached.
+ *
+ * The first match is always the next one to act on, for the same reason: what
+ * has been done is no longer in the set.
+ */
+export async function actOnNextPost(page: Page, action: "like" | "bookmark") {
   await clickNthAfterScrolling(
     page,
     action === "like" ? SELECTORS.like : SELECTORS.bookmark,
-    alreadyDone,
+    0,
   );
 }
 
-export async function followNextAccount(page: Page, alreadyDone: number) {
-  await clickNthAfterScrolling(page, SELECTORS.follow, alreadyDone);
+/** The first account still offering Follow, for the reason above. */
+export async function followNextAccount(page: Page) {
+  await clickNthAfterScrolling(page, SELECTORS.follow, 0);
 }

@@ -2,6 +2,7 @@ import type { XViewModel } from "./view_model";
 import { PlausibleEvents } from "../../types";
 import { AutomationErrorType } from "../../automation_errors";
 import { tombstoneUpdateBioCreditCydText } from "./types";
+import { TimeoutError } from "../automation_failures";
 
 const PROFILE_SETTINGS_URL = "https://x.com/settings/profile";
 
@@ -10,10 +11,32 @@ const PROFILE_SETTINGS_URL = "https://x.com/settings/profile";
 // so it is reached by position among the matches rather than by the selector.
 const FILE_INPUT_SELECTOR = 'input[data-testid="fileInput"]';
 
-// The crop step X shows after a file is chosen
+// The crop step X sometimes shows after a file is chosen
 const APPLY_BUTTON_SELECTOR = '[data-testid="applyButton"]';
 
+// Long enough for X to open its crop step, short enough that a delivery which
+// did not produce one can be made again without a long wait first.
+const CROP_STEP_TIMEOUT = 8000;
+
+// How many times to put the banner on the file input before giving up on X
+// offering a crop for it.
+const BANNER_DELIVERY_TRIES = 3;
+
 const SAVE_BUTTON_SELECTOR = 'button[data-testid="Profile_Save_Button"]';
+
+// The banner on the profile page, which is what says whether a save landed.
+const BANNER_IMAGE_SELECTOR = 'a[href$="/header_photo"] img';
+
+// How long to give the profile page to render its banner. An account with no
+// banner never renders one, so running this out is an answer rather than a
+// failure.
+const BANNER_RENDER_TIMEOUT = 10000;
+
+// The page draws the banner it already had and swaps the new one in a moment
+// later, so the banner is read until it turns over rather than sampled once.
+// Recorded on a real run, the swap landed 200ms after the first paint.
+const BANNER_CHANGE_TRIES = 30;
+const BANNER_POLL_INTERVAL = 500;
 
 const AUDIENCE_SETTINGS_URL = "https://x.com/settings/audience_and_tagging";
 
@@ -48,18 +71,84 @@ async function clickSaveProfile(
 }
 
 /** The banner X serves on the profile, which is the only answer that counts. */
-async function readBannerURL(vm: XViewModel): Promise<string> {
-  await vm.loadURLWithRateLimit(
-    `https://x.com/${vm.account.xAccount?.username ?? ""}`,
-  );
+/** The banner the page is showing at this instant. */
+async function readBannerSrc(vm: XViewModel): Promise<string> {
   return (
     (await vm.getWebview()?.executeJavaScript(`
         (() => {
-            const image = document.querySelector('a[href$="/header_photo"] img');
+            const image = document.querySelector('${BANNER_IMAGE_SELECTOR}');
             return image ? image.src : "";
         })();
     `)) ?? ""
   );
+}
+
+/**
+ * Opens the profile and waits for it to draw a banner at all.
+ *
+ * Returns false when it never draws one, which is what an account with no
+ * banner looks like and is an answer rather than a failure.
+ */
+async function openProfileWithBanner(vm: XViewModel): Promise<boolean> {
+  const profileURL = `https://x.com/${vm.account.xAccount?.username ?? ""}`;
+  await vm.loadURLWithRateLimit(profileURL);
+
+  // X renders the header photo after the page load finishes, so asking
+  // straight away gets nothing back and reads as "no banner". When both the
+  // before and the after read that way they match, and a banner that was in
+  // fact saved gets reported as one that never changed.
+  //
+  // A profile with no banner never grows this element, so running the timeout
+  // out is an answer, not a failure.
+  try {
+    await vm.waitForSelector(
+      BANNER_IMAGE_SELECTOR,
+      profileURL,
+      BANNER_RENDER_TIMEOUT,
+    );
+  } catch (error) {
+    if (!(error instanceof TimeoutError)) {
+      throw error;
+    }
+    vm.log("openProfileWithBanner", "the profile rendered no banner");
+    return false;
+  }
+  return true;
+}
+
+async function readBannerURL(vm: XViewModel): Promise<string> {
+  if (!(await openProfileWithBanner(vm))) {
+    return "";
+  }
+  return await readBannerSrc(vm);
+}
+
+/**
+ * Reads the banner back after a save, giving the page time to turn it over.
+ *
+ * The profile draws the banner it already had and replaces it a moment later,
+ * so asking once catches the old URL and reports a save that worked as one
+ * that changed nothing. Watching until it differs makes the answer the page
+ * settles on the one that counts, rather than whichever it happened to be
+ * showing when asked.
+ */
+async function readBannerURLAfterSave(
+  vm: XViewModel,
+  bannerBefore: string,
+): Promise<string> {
+  if (!(await openProfileWithBanner(vm))) {
+    return "";
+  }
+
+  let latest = "";
+  for (let attempt = 0; attempt < BANNER_CHANGE_TRIES; attempt++) {
+    latest = await readBannerSrc(vm);
+    if (latest !== bannerBefore) {
+      return latest;
+    }
+    await vm.sleep(BANNER_POLL_INTERVAL);
+  }
+  return latest;
 }
 
 /** The bio X serves back into the profile dialog. */
@@ -157,22 +246,65 @@ export async function runJobTombstoneUpdateBanner(
   // Load the profile page
   await vm.loadURLWithRateLimit(PROFILE_SETTINGS_URL);
 
-  // Wait for the file input, and set the banner on it
+  // Put the banner on the file input, and wait for X to offer its crop.
+  //
+  // The crop is not decoration that X sometimes shows: Apply is what stages
+  // the uploaded image as the banner. Recorded from Cyd's own session, a
+  // delivery that draws no crop still uploads the file — INIT, APPEND and
+  // FINALIZE all succeed — and then update_profile_banner.json is never called
+  // at all, so Save writes the name and bio and leaves the banner alone.
+  //
+  // A delivery that draws no crop has therefore staged nothing, and is worth
+  // making again rather than carrying on from.
   await vm.waitForSelector(FILE_INPUT_SELECTOR, PROFILE_SETTINGS_URL);
-  const wasSet = await vm
-    .getWebview()
-    ?.executeJavaScript(setBannerScript(bannerDataURL));
-  if (!wasSet) {
+
+  let cropOffered = false;
+  for (
+    let attempt = 0;
+    attempt < BANNER_DELIVERY_TRIES && !cropOffered;
+    attempt++
+  ) {
+    const wasSet = await vm
+      .getWebview()
+      ?.executeJavaScript(setBannerScript(bannerDataURL));
+    if (!wasSet) {
+      await vm.error(
+        AutomationErrorType.x_runJob_tombstoneUpdateBanner_FailedToSetBanner,
+        {},
+      );
+      return false;
+    }
+
+    try {
+      await vm.waitForSelector(
+        APPLY_BUTTON_SELECTOR,
+        PROFILE_SETTINGS_URL,
+        CROP_STEP_TIMEOUT,
+      );
+      cropOffered = true;
+    } catch (error) {
+      if (!(error instanceof TimeoutError)) {
+        throw error;
+      }
+      vm.log("runJobTombstoneUpdateBanner", [
+        "X offered no crop step, putting the banner on again",
+        attempt + 1,
+      ]);
+    }
+  }
+
+  if (!cropOffered) {
+    // Saving from here uploads the image, attaches nothing, and comes back
+    // reporting a banner that did not change, which explains none of it.
     await vm.error(
-      AutomationErrorType.x_runJob_tombstoneUpdateBanner_FailedToSetBanner,
-      {},
+      AutomationErrorType.x_runJob_tombstoneUpdateBanner_FailedToSave,
+      { reason: "X never offered its crop step, so the banner was not staged" },
     );
     return false;
   }
 
-  // Confirm the crop X offers, then save. Both clicks go through the element's
-  // own click(), because the dialog keeps a mask that swallows pointer events.
-  await vm.waitForSelector(APPLY_BUTTON_SELECTOR, PROFILE_SETTINGS_URL);
+  // The click goes through the element's own click(), because the dialog keeps
+  // a mask that swallows pointer events.
   if (!(await vm.scriptClickElement(APPLY_BUTTON_SELECTOR))) {
     await vm.error(
       AutomationErrorType.x_runJob_tombstoneUpdateBanner_FailedToSave,
@@ -192,7 +324,7 @@ export async function runJobTombstoneUpdateBanner(
 
   // Read the banner back. A save that clicked cleanly and changed nothing is
   // exactly the failure this job kept reporting as success.
-  const bannerAfter = await readBannerURL(vm);
+  const bannerAfter = await readBannerURLAfterSave(vm, bannerBefore);
   if (bannerAfter === bannerBefore) {
     vm.log("runJobTombstoneUpdateBanner", ["banner unchanged", bannerBefore]);
     await vm.error(
@@ -267,6 +399,15 @@ export async function runJobTombstoneUpdateBio(
       },
     );
     return false;
+  }
+
+  // Cyd's saved copy of the bio is written at login and nowhere else, and the
+  // tombstone page pre-fills from it. Left stale, that page comes back
+  // offering the bio this job just replaced. The value read back off X is the
+  // one worth keeping, since it is what X actually holds.
+  if (vm.account.xAccount) {
+    vm.account.xAccount.bio = savedBio;
+    await window.electron.database.saveAccount(JSON.stringify(vm.account));
   }
 
   await vm.finishJob(jobIndex);

@@ -89,6 +89,7 @@ describe("jobs_tombstone.ts", () => {
       expect(vm.waitForSelector).toHaveBeenCalledWith(
         '[data-testid="applyButton"]',
         "https://x.com/settings/profile",
+        8000,
       );
       expect(vm.scriptClickElement).toHaveBeenCalledWith(
         '[data-testid="applyButton"]',
@@ -163,6 +164,127 @@ describe("jobs_tombstone.ts", () => {
       expect(events[0].type).toBe("change");
     });
 
+    it("should wait for the profile to render its banner before reading it", async () => {
+      // X renders the header photo after the load finishes. Reading straight
+      // away got "" from both the before and the after read, which match, so a
+      // banner that had been saved was reported as one that never changed.
+      answerWith(
+        ["https://pbs.twimg.com/old", "https://pbs.twimg.com/new"],
+        [],
+      );
+
+      await TombstoneJobs.runJobTombstoneUpdateBanner(vm, 0);
+
+      expect(vm.waitForSelector).toHaveBeenCalledWith(
+        'a[href$="/header_photo"] img',
+        "https://x.com/testuser",
+        10000,
+      );
+    });
+
+    it("should read a profile that renders no banner as having none", async () => {
+      // An account with no banner never grows that element, so the wait
+      // running out is an answer rather than something to throw over.
+      const { TimeoutError } = await import("../automation_failures");
+      vi.spyOn(vm, "waitForSelector").mockImplementation(
+        async (selector: string) => {
+          if (selector === 'a[href$="/header_photo"] img') {
+            throw new TimeoutError(selector);
+          }
+        },
+      );
+
+      const result = await TombstoneJobs.runJobTombstoneUpdateBanner(vm, 0);
+
+      // Nothing was there before and nothing after, which is a real failure —
+      // but reported as one, rather than thrown out of the job.
+      expect(result).toBe(false);
+      expect(vm.error).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ reason: "the banner did not change" }),
+      );
+    });
+
+    it("should wait out the old banner the profile shows before the new one", async () => {
+      // Recorded on a real run: the save returns 200, then the profile page
+      // fetches the banner it already had and replaces it 200ms later. Reading
+      // once catches the old URL and calls a save that worked unchanged, which
+      // is why this failed four times and then passed with nothing altered.
+      answerWith(
+        [
+          "https://pbs.twimg.com/profile_banners/1/1789501624/1080x360",
+          "https://pbs.twimg.com/profile_banners/1/1789501624/1080x360",
+          "https://pbs.twimg.com/profile_banners/1/1789502153/1080x360",
+        ],
+        [],
+      );
+
+      const result = await TombstoneJobs.runJobTombstoneUpdateBanner(vm, 0);
+
+      expect(result).toBe(true);
+      expect(vm.finishJob).toHaveBeenCalledWith(0);
+      expect(vm.error).not.toHaveBeenCalled();
+    });
+
+    it("should put the banner on again when X offers no crop step", async () => {
+      // Recorded from Cyd's own session: with no crop step the image still
+      // uploads, INIT through FINALIZE, and update_profile_banner.json is
+      // never called at all. Apply is what stages the upload as the banner,
+      // so a run that never sees one saves nothing.
+      const { TimeoutError } = await import("../automation_failures");
+      let cropWaits = 0;
+      vi.spyOn(vm, "waitForSelector").mockImplementation(
+        async (selector: string) => {
+          if (selector === '[data-testid="applyButton"]') {
+            cropWaits += 1;
+            if (cropWaits === 1) {
+              throw new TimeoutError(selector);
+            }
+          }
+        },
+      );
+      answerWith(
+        ["https://pbs.twimg.com/old", "https://pbs.twimg.com/new"],
+        [],
+      );
+
+      const result = await TombstoneJobs.runJobTombstoneUpdateBanner(vm, 0);
+
+      expect(cropWaits).toBeGreaterThan(1);
+      expect(vm.scriptClickElement).toHaveBeenCalledWith(
+        '[data-testid="applyButton"]',
+      );
+      expect(result).toBe(true);
+      expect(vm.error).not.toHaveBeenCalled();
+    });
+
+    it("should say the banner was never staged rather than save without it", async () => {
+      const { TimeoutError } = await import("../automation_failures");
+      vi.spyOn(vm, "waitForSelector").mockImplementation(
+        async (selector: string) => {
+          if (selector === '[data-testid="applyButton"]') {
+            throw new TimeoutError(selector);
+          }
+        },
+      );
+      answerWith(["https://pbs.twimg.com/old"], []);
+
+      const result = await TombstoneJobs.runJobTombstoneUpdateBanner(vm, 0);
+
+      expect(result).toBe(false);
+      // Clicking Save without the crop uploads the image and attaches nothing,
+      // then reports a banner that did not change, which explains none of it.
+      expect(vm.scriptClickElement).not.toHaveBeenCalledWith(
+        'button[data-testid="Profile_Save_Button"]',
+      );
+      expect(vm.error).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          reason: "X never offered its crop step, so the banner was not staged",
+        }),
+      );
+    });
+
     it("should report a banner it could not set rather than claiming success", async () => {
       vi.spyOn(vm.getWebview()!, "executeJavaScript").mockResolvedValue(false);
 
@@ -235,6 +357,30 @@ describe("jobs_tombstone.ts", () => {
       );
       expect(vm.finishJob).toHaveBeenCalledWith(0);
       expect(vm.error).not.toHaveBeenCalled();
+    });
+
+    it("should save the new bio, so the wizard stops offering the old one", async () => {
+      // The tombstone page pre-fills from the bio Cyd has saved, which is
+      // written at login and nowhere else. Leaving it stale meant coming back
+      // to the page and being offered the bio the tombstone had replaced.
+      vm.account.xAccount!.bio = "Seeded test account.";
+      answerWith([], ["Gone to Bluesky"]);
+
+      const result = await TombstoneJobs.runJobTombstoneUpdateBio(vm, 0);
+
+      expect(result).toBe(true);
+      expect(vm.account.xAccount!.bio).toBe("Gone to Bluesky");
+      expect(window.electron.database.saveAccount).toHaveBeenCalled();
+    });
+
+    it("should leave the saved bio alone when the change did not land", async () => {
+      vm.account.xAccount!.bio = "Seeded test account.";
+      answerWith([], ["Seeded test account."]);
+
+      const result = await TombstoneJobs.runJobTombstoneUpdateBio(vm, 0);
+
+      expect(result).toBe(false);
+      expect(vm.account.xAccount!.bio).toBe("Seeded test account.");
     });
 
     it("should report a bio that did not change rather than finishing", async () => {

@@ -493,9 +493,8 @@ test("indexParseTweets() reads the rate limit reset from the response headers", 
 
 test("indexParseTweets() saves the rest when one entry cannot be read", async () => {
   // No fixture can show a retweet whose original was deleted — the entry is
-  // simply gone from the timeline (findings 5) — and a long-form post was
-  // never observed either. What both would cost, if X ever returns one Cyd
-  // cannot read, is the rest of the archive. They do not.
+  // simply gone from the timeline (findings 5). What that would cost, if X
+  // ever returns one Cyd cannot read, is the rest of the archive. It does not.
   const body = JSON.parse(
     fs.readFileSync(
       path.join(

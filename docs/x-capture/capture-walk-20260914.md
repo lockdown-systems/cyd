@@ -58,7 +58,6 @@ the first cursor.
 - [ ] Open the permalink of the post with four images
 - [ ] Open the permalink of the video post
 - [ ] Open the permalink of the poll
-- [ ] Open the permalink of the long-form post, if one was seeded
 - [ ] Open the permalink of the link-card post
 - [ ] Open the permalink of the retweet whose original was deleted — if it is
       not on the timeline at all, that is the finding, and the decoded type
