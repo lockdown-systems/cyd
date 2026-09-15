@@ -58,14 +58,11 @@ export async function deleteRetweetItem(
   retweetId: string,
   repostedTweetId: string | null,
 ): Promise<number> {
-  if (repostedTweetId) {
-    return await sendXDeleteMutation(vm, ct0, "DeleteRetweet", {
-      source_tweet_id: repostedTweetId,
-    });
+  if (!repostedTweetId) {
+    return await deleteTweetItem(vm, ct0, retweetId);
   }
 
-  return await sendXDeleteMutation(vm, ct0, "DeleteTweet", {
-    tweet_id: retweetId,
-    dark_request: false,
+  return await sendXDeleteMutation(vm, ct0, "DeleteRetweet", {
+    source_tweet_id: repostedTweetId,
   });
 }

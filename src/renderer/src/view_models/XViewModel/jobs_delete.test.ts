@@ -510,6 +510,7 @@ describe("jobs_delete.ts", () => {
 
       expect(vm.loadURLWithRateLimit).toHaveBeenCalledWith(
         "https://x.com/testuser/likes",
+        ["https://x.com/i/history/likes", "https://x.com/i/history"],
       );
     });
 
@@ -658,6 +659,7 @@ describe("jobs_delete.ts", () => {
 
       expect(vm.loadURLWithRateLimit).toHaveBeenCalledWith(
         "https://x.com/i/bookmarks",
+        ["https://x.com/i/history"],
       );
     });
 

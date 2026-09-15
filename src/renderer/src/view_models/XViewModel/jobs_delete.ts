@@ -250,11 +250,14 @@ export async function runJobDeleteLikes(
   vm.progress.likesDeleted = 0;
   await vm.syncProgress();
 
-  // Load the likes page
+  // Load the likes page. X redirects it into its /i/ namespace, which is where
+  // the referrer for UnfavoriteTweet comes from, so accept the redirect rather
+  // than ending the job on it.
   vm.showBrowser = true;
   vm.showAutomationNotice = true;
   await vm.loadURLWithRateLimit(
     `https://x.com/${vm.account.xAccount?.username}/likes`,
+    ["https://x.com/i/history/likes", "https://x.com/i/history"],
   );
 
   // Hide the browser and start showing other progress instead
@@ -345,10 +348,13 @@ export async function runJobDeleteBookmarks(
   vm.progress.bookmarksDeleted = 0;
   await vm.syncProgress();
 
-  // Load the bookmarks page
+  // Load the bookmarks page, which X may redirect to /i/history — the referrer
+  // its own client sends from here.
   vm.showBrowser = true;
   vm.showAutomationNotice = true;
-  await vm.loadURLWithRateLimit("https://x.com/i/bookmarks");
+  await vm.loadURLWithRateLimit("https://x.com/i/bookmarks", [
+    "https://x.com/i/history",
+  ]);
 
   // Hide the browser and start showing other progress instead
   vm.showBrowser = false;

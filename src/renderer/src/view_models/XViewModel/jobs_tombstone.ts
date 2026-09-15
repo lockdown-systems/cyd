@@ -5,9 +5,10 @@ import { tombstoneUpdateBioCreditCydText } from "./types";
 
 const PROFILE_SETTINGS_URL = "https://x.com/settings/profile";
 
-// X's profile settings dialog carries three file inputs. The banner is the
-// first of them, which is the header photo at the top of the dialog.
-const BANNER_FILE_INPUT_SELECTOR = 'input[data-testid="fileInput"]';
+// X's profile settings dialog carries three file inputs, all matching this.
+// The banner is the first of them, the header photo at the top of the dialog,
+// so it is reached by position among the matches rather than by the selector.
+const FILE_INPUT_SELECTOR = 'input[data-testid="fileInput"]';
 
 // The crop step X shows after a file is chosen
 const APPLY_BUTTON_SELECTOR = '[data-testid="applyButton"]';
@@ -20,7 +21,7 @@ const SAVE_BUTTON_SELECTOR = 'button[data-testid="Profile_Save_Button"]';
 function setBannerScript(bannerDataURL: string): string {
   return `
         (async () => {
-            const input = document.querySelectorAll('${BANNER_FILE_INPUT_SELECTOR}')[0];
+            const input = document.querySelectorAll('${FILE_INPUT_SELECTOR}')[0];
             if(!input) { return false; }
             const response = await fetch('${bannerDataURL}');
             const blob = await response.blob();
@@ -58,7 +59,7 @@ export async function runJobTombstoneUpdateBanner(
   }
 
   // Wait for the file input, and set the banner on it
-  await vm.waitForSelector(BANNER_FILE_INPUT_SELECTOR, PROFILE_SETTINGS_URL);
+  await vm.waitForSelector(FILE_INPUT_SELECTOR, PROFILE_SETTINGS_URL);
   const wasSet = await vm
     .getWebview()
     ?.executeJavaScript(setBannerScript(bannerDataURL));
