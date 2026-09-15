@@ -6,9 +6,10 @@ import path from "path";
  * Provides easy access to test data files
  */
 
+// __dirname is <repo>/src/renderer/src/view_models/XViewModel, so five levels
+// up is the repository root.
 const TESTDATA_DIR = path.join(
   __dirname,
-  "..",
   "..",
   "..",
   "..",
@@ -52,6 +53,69 @@ export const XAPIFixtures = {
 
   // Bookmarks response
   bookmarks: () => loadFixture("XBookmarks.json"),
+
+  // --- Capture of 2026-09-14 (see docs/x-capture/findings-20260914.md) ---
+  //
+  // X split UserTweetsAndReplies into UserOriginalsTimeline (posts),
+  // UserRepliesTimeline (replies), and UserRepostsTimeline (reposts), and the
+  // user objects in all three carry their author fields in `core` rather than
+  // in `legacy`. Viewer is the exception and still returns `legacy`.
+
+  // Posts. Pages 1-3 are populated (20, 20, 13 entries); page 4 is the
+  // end-of-timeline response, which carries two cursors and no posts.
+  userOriginalsTimeline_20260914_1: () =>
+    loadFixture("XUserOriginalsTimeline_20260914_1.json"),
+  userOriginalsTimeline_20260914_2: () =>
+    loadFixture("XUserOriginalsTimeline_20260914_2.json"),
+  userOriginalsTimeline_20260914_3: () =>
+    loadFixture("XUserOriginalsTimeline_20260914_3.json"),
+  userOriginalsTimeline_20260914_4: () =>
+    loadFixture("XUserOriginalsTimeline_20260914_4.json"),
+
+  // Likes. Pages 1-3 populated (20, 20, 16); page 4 is cursors only.
+  likes_20260914_1: () => loadFixture("XLikes_20260914_1.json"),
+  likes_20260914_2: () => loadFixture("XLikes_20260914_2.json"),
+  likes_20260914_3: () => loadFixture("XLikes_20260914_3.json"),
+  likes_20260914_4: () => loadFixture("XLikes_20260914_4.json"),
+
+  // Bookmarks. Pages 1-3 populated (20, 20, 18); page 4 is cursors only.
+  bookmarks_20260914_1: () => loadFixture("XBookmarks_20260914_1.json"),
+  bookmarks_20260914_2: () => loadFixture("XBookmarks_20260914_2.json"),
+  bookmarks_20260914_3: () => loadFixture("XBookmarks_20260914_3.json"),
+  bookmarks_20260914_4: () => loadFixture("XBookmarks_20260914_4.json"),
+
+  // Replies, from /<username>/with_replies, which now returns replies only.
+  userRepliesTimeline_20260914: () =>
+    loadFixture("XUserRepliesTimeline_20260914.json"),
+
+  // Reposts, from /<username>/reposts. They are not on the profile timeline.
+  userRepostsTimeline_20260914: () =>
+    loadFixture("XUserRepostsTimeline_20260914.json"),
+
+  // Every timeline as an empty account returns it. There is no empty-state
+  // marker in any of them: an empty timeline is a recognised response with no
+  // post entries. The profile timeline still returns a who-to-follow module,
+  // so "no entries" is not the test either.
+  userOriginalsTimelineEmpty_20260914: () =>
+    loadFixture("XUserOriginalsTimelineEmpty_20260914.json"),
+  userRepliesTimelineEmpty_20260914: () =>
+    loadFixture("XUserRepliesTimelineEmpty_20260914.json"),
+  userRepostsTimelineEmpty_20260914: () =>
+    loadFixture("XUserRepostsTimelineEmpty_20260914.json"),
+  likesEmpty_20260914: () => loadFixture("XLikesEmpty_20260914.json"),
+  bookmarksEmpty_20260914: () => loadFixture("XBookmarksEmpty_20260914.json"),
+
+  // Mutation responses. DeleteRetweet is its own operation, takes
+  // `source_tweet_id`, and names the original post in its response.
+  deleteTweet_20260914: () => loadFixture("XDeleteTweet_20260914.json"),
+  unfavoriteTweet_20260914: () => loadFixture("XUnfavoriteTweet_20260914.json"),
+  deleteBookmark_20260914: () => loadFixture("XDeleteBookmark_20260914.json"),
+  deleteRetweet_20260914: () => loadFixture("XDeleteRetweet_20260914.json"),
+
+  // Account lookup. Viewer still answers 200 and its user object still has
+  // `legacy` with every field Cyd reads, so it does not share a parser with
+  // the timeline operations above.
+  viewer_20260914: () => loadFixture("XViewer_20260914.json"),
 };
 
 /**
@@ -179,18 +243,23 @@ export const GraphQLResponses = {
   },
 
   /**
-   * Rate limit response
+   * Rate limit response, as observed in the capture of 2026-09-14: an HTTP 429
+   * whose body is the plain text `Rate limit exceeded`, not JSON. The numbers
+   * a caller needs are in the headers, so they are carried here too.
+   *
+   * There is no fixture file for this because the body is not JSON. The
+   * disguised form — a successful status carrying an `errors` array — was not
+   * seen once across roughly 2,500 captured calls, so nothing here stands in
+   * for it; see finding 12 in docs/x-capture/findings-20260914.md.
    */
   rateLimitError: {
     status: 429,
-    body: JSON.stringify({
-      errors: [
-        {
-          message: "Rate limit exceeded",
-          code: 88,
-        },
-      ],
-    }),
+    body: "Rate limit exceeded",
+    headers: {
+      "x-rate-limit-limit": "50",
+      "x-rate-limit-remaining": "0",
+      "x-rate-limit-reset": "1789429535",
+    },
   },
 
   /**

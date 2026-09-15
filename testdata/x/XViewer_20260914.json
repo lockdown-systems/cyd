@@ -1,0 +1,113 @@
+{
+    "data": {
+        "is_super_follow_subscriber": false,
+        "viewer": {
+            "create_community_action_result": {
+                "__typename": "CommunityCreateActionUnavailable",
+                "message": "Action is not available.",
+                "reason": "Unavailable"
+            },
+            "educationFlags": [
+                {
+                    "flag": "ArticleNudge",
+                    "timestamp": 1731370437701
+                },
+                {
+                    "flag": "PinnedConversationsEducation",
+                    "timestamp": 1729089534157
+                },
+                {
+                    "flag": "NewUserPromptEducation",
+                    "timestamp": 1729089331880
+                },
+                {
+                    "flag": "GraduatedUserPromptEducation",
+                    "timestamp": 1731370675492
+                }
+            ],
+            "has_community_memberships": false,
+            "is_active_creator": false,
+            "is_tfe_restricted_session": false,
+            "super_followers_count": 0,
+            "user_features": [
+                {
+                    "enabled": false,
+                    "feature": "mediatool_studio_library"
+                }
+            ],
+            "user_results": {
+                "result": {
+                    "__typename": "User",
+                    "affiliates_highlighted_label": {},
+                    "creator_subscriptions_count": 0,
+                    "has_graduated_access": true,
+                    "id": "VXNlcjoxODMzNjUxMDUzMTY4MDcwNjU2",
+                    "is_blue_verified": false,
+                    "is_profile_translatable": false,
+                    "legacy": {
+                        "blocked_by": false,
+                        "blocking": false,
+                        "can_dm": true,
+                        "can_media_tag": false,
+                        "created_at": "Tue Sep 10 23:37:56 +0000 2024",
+                        "default_profile": true,
+                        "default_profile_image": false,
+                        "description": "Seeded test account. Captured 20260914.",
+                        "entities": {
+                            "description": {}
+                        },
+                        "fast_followers_count": 0,
+                        "favourites_count": 53,
+                        "follow_request_sent": false,
+                        "followed_by": false,
+                        "followers_count": 1,
+                        "following": false,
+                        "friends_count": 17,
+                        "has_custom_timelines": false,
+                        "is_translator": false,
+                        "listed_count": 0,
+                        "location": "",
+                        "media_count": 7,
+                        "muting": false,
+                        "name": "snowyfoxmatch",
+                        "needs_phone_verification": false,
+                        "normal_followers_count": 1,
+                        "notifications": false,
+                        "possibly_sensitive": false,
+                        "profile_banner_url": "",
+                        "profile_image_url_https": "https://pbs.twimg.com/profile_images/1833667031700586496/a_XCrxOt_normal.jpg",
+                        "profile_interstitial_type": "",
+                        "protected": false,
+                        "screen_name": "snowyfoxmatch",
+                        "statuses_count": 56,
+                        "time_zone": "",
+                        "translator_type": "none",
+                        "url": "",
+                        "utc_offset": 0,
+                        "verified": false,
+                        "want_retweets": false,
+                        "withheld_description": "",
+                        "withheld_scope": ""
+                    },
+                    "legacy_extended_profile": {
+                        "birthdate": {
+                            "day": 18,
+                            "month": 11,
+                            "visibility": "Self",
+                            "year": 1979,
+                            "year_visibility": "Self"
+                        }
+                    },
+                    "parody_commentary_fan_label": "None",
+                    "profile_image_shape": "Circle",
+                    "rest_id": "1833651053168070656",
+                    "super_follow_eligible": false,
+                    "super_followed_by": false,
+                    "super_following": false,
+                    "super_follows_application_status": "NotStarted",
+                    "tipjar_settings": {}
+                }
+            }
+        }
+    }
+}

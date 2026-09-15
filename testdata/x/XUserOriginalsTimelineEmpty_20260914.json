@@ -1,0 +1,475 @@
+{
+    "data": {
+        "user": {
+            "result": {
+                "__typename": "User",
+                "timeline": {
+                    "timeline": {
+                        "instructions": [
+                            {
+                                "type": "TimelineClearCache"
+                            },
+                            {
+                                "entries": [
+                                    {
+                                        "content": {
+                                            "__typename": "TimelineTimelineModule",
+                                            "clientEventInfo": {
+                                                "component": "suggest_who_to_follow",
+                                                "details": {
+                                                    "timelinesDetails": {
+                                                        "controllerData": "DAACDAACDAABCgABAAAAAAAAAIAAAAAA",
+                                                        "injectionType": "WhoToFollow",
+                                                        "sourceData": "DAABCgABb/PBa2FvyeUKAAIAAAAAAAAAAAAIAAIAAAC0CAADAAAAAgwABQwAAgwAAgwAAQoAAQAAAAAAAACAAAAAAAA="
+                                                    }
+                                                }
+                                            },
+                                            "displayType": "Vertical",
+                                            "entryType": "TimelineTimelineModule",
+                                            "footer": {
+                                                "displayType": "Classic",
+                                                "landingUrl": {
+                                                    "url": "twitter://connect_people?user_id=1769426369526771712&display_location=profile_wtf_showmore",
+                                                    "urlType": "DeepLink"
+                                                },
+                                                "text": "Show more"
+                                            },
+                                            "header": {
+                                                "displayType": "Classic",
+                                                "sticky": false,
+                                                "text": "Who to follow"
+                                            },
+                                            "items": [
+                                                {
+                                                    "entryId": "who-to-follow-2099646984649441280-user-44196397",
+                                                    "item": {
+                                                        "clientEventInfo": {
+                                                            "component": "suggest_who_to_follow",
+                                                            "details": {
+                                                                "timelinesDetails": {
+                                                                    "controllerData": "DAACDAACDAABCgABAAAAAAAAAIAAAAAA",
+                                                                    "injectionType": "WhoToFollow",
+                                                                    "sourceData": "DAABCgABb/PBa2FvyeUKAAIAAAAAAAAAAAAIAAIAAAC0CAADAAAAAgwABQwAAgwAAgwAAQoAAQAAAAAAAACAAAAAAAA="
+                                                                }
+                                                            },
+                                                            "element": "user"
+                                                        },
+                                                        "itemContent": {
+                                                            "__typename": "TimelineUser",
+                                                            "itemType": "TimelineUser",
+                                                            "userDisplayType": "User",
+                                                            "user_results": {
+                                                                "result": {
+                                                                    "__typename": "User",
+                                                                    "action_counts": {
+                                                                        "favorites_count": 248080
+                                                                    },
+                                                                    "affiliates_highlighted_label": {
+                                                                        "label": {
+                                                                            "badge": {
+                                                                                "url": "https://pbs.twimg.com/profile_images/1955359038532653056/OSHY3ewP_bigger.jpg"
+                                                                            },
+                                                                            "description": "X",
+                                                                            "url": {
+                                                                                "url": "https://twitter.com/X",
+                                                                                "urlType": "DeepLink"
+                                                                            },
+                                                                            "userLabelDisplayType": "Badge",
+                                                                            "userLabelType": "BusinessLabel"
+                                                                        }
+                                                                    },
+                                                                    "avatar": {
+                                                                        "image_url": "https://pbs.twimg.com/profile_images/2053244804520427520/m8mdWZCG_normal.jpg"
+                                                                    },
+                                                                    "banner": {
+                                                                        "image_url": "https://pbs.twimg.com/profile_banners/44196397/1774145451"
+                                                                    },
+                                                                    "core": {
+                                                                        "created_at": "Tue Jun 02 20:12:29 +0000 2009",
+                                                                        "name": "Elon Musk",
+                                                                        "screen_name": "elonmusk"
+                                                                    },
+                                                                    "follow_request_sent": false,
+                                                                    "has_graduated_access": true,
+                                                                    "id": "VXNlcjo0NDE5NjM5Nw==",
+                                                                    "is_blue_verified": true,
+                                                                    "location": {
+                                                                        "location": ""
+                                                                    },
+                                                                    "media_permissions": {
+                                                                        "can_media_tag": false
+                                                                    },
+                                                                    "notifications_settings": {
+                                                                        "notifications_enabled": false
+                                                                    },
+                                                                    "parody_commentary_fan_label": "None",
+                                                                    "pinned_items": {
+                                                                        "tweet_ids_str": [
+                                                                            "2098932438055469451"
+                                                                        ]
+                                                                    },
+                                                                    "possibly_sensitive": false,
+                                                                    "privacy": {
+                                                                        "protected": false
+                                                                    },
+                                                                    "professional": {
+                                                                        "category": [],
+                                                                        "professional_type": "Creator",
+                                                                        "rest_id": "1679729435447275522"
+                                                                    },
+                                                                    "profile_bio": {
+                                                                        "description": "https://t.co/ZdBx5WABYx",
+                                                                        "entities": {
+                                                                            "description": {
+                                                                                "urls": [
+                                                                                    {
+                                                                                        "display_url": "Terafab.AI",
+                                                                                        "expanded_url": "http://Terafab.AI",
+                                                                                        "indices": [
+                                                                                            0,
+                                                                                            23
+                                                                                        ],
+                                                                                        "url": "https://t.co/ZdBx5WABYx"
+                                                                                    }
+                                                                                ]
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    "profile_image_shape": "Circle",
+                                                                    "profile_metadata": {
+                                                                        "profile_interstitial_type": ""
+                                                                    },
+                                                                    "profile_translation": {
+                                                                        "translator_type": "none"
+                                                                    },
+                                                                    "relationship_counts": {
+                                                                        "followers": 241659330,
+                                                                        "following": 1406
+                                                                    },
+                                                                    "relationship_perspectives": {
+                                                                        "blocked_by": false,
+                                                                        "blocking": false,
+                                                                        "followed_by": false,
+                                                                        "following": false,
+                                                                        "live_following": false,
+                                                                        "muting": false
+                                                                    },
+                                                                    "rest_id": "44196397",
+                                                                    "super_follow_eligible": true,
+                                                                    "super_followed_by": false,
+                                                                    "super_following": false,
+                                                                    "tweet_counts": {
+                                                                        "media_tweets": 4718,
+                                                                        "tweets": 108562
+                                                                    },
+                                                                    "verification": {
+                                                                        "verified": false
+                                                                    },
+                                                                    "website": {
+                                                                        "url": ""
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "entryId": "who-to-follow-2099646984649441280-user-667563",
+                                                    "item": {
+                                                        "clientEventInfo": {
+                                                            "component": "suggest_who_to_follow",
+                                                            "details": {
+                                                                "timelinesDetails": {
+                                                                    "controllerData": "DAACDAACDAABCgABAAAAAAAAAIAAAAAA",
+                                                                    "injectionType": "WhoToFollow",
+                                                                    "sourceData": "DAABCgABb/PBa2FvyeUKAAIAAAAAAAAAAAAIAAIAAAC1CAADAAAAAgwABQwAAgwAAgwAAQoAAQAAAAAAAACAAAAAAAA="
+                                                                }
+                                                            },
+                                                            "element": "user"
+                                                        },
+                                                        "itemContent": {
+                                                            "__typename": "TimelineUser",
+                                                            "itemType": "TimelineUser",
+                                                            "userDisplayType": "User",
+                                                            "user_results": {
+                                                                "result": {
+                                                                    "__typename": "User",
+                                                                    "action_counts": {
+                                                                        "favorites_count": 7652
+                                                                    },
+                                                                    "affiliates_highlighted_label": {},
+                                                                    "avatar": {
+                                                                        "image_url": "https://pbs.twimg.com/profile_images/2092611113741586432/G2x2pknd_normal.jpg"
+                                                                    },
+                                                                    "banner": {
+                                                                        "image_url": "https://pbs.twimg.com/profile_banners/667563/1758581721"
+                                                                    },
+                                                                    "core": {
+                                                                        "created_at": "Fri Jan 19 20:43:16 +0000 2007",
+                                                                        "name": "Sacramento Kings",
+                                                                        "screen_name": "SacramentoKings"
+                                                                    },
+                                                                    "follow_request_sent": false,
+                                                                    "has_graduated_access": true,
+                                                                    "id": "VXNlcjo2Njc1NjM=",
+                                                                    "is_blue_verified": true,
+                                                                    "location": {
+                                                                        "location": "@golden1center"
+                                                                    },
+                                                                    "media_permissions": {
+                                                                        "can_media_tag": true
+                                                                    },
+                                                                    "notifications_settings": {
+                                                                        "notifications_enabled": false
+                                                                    },
+                                                                    "parody_commentary_fan_label": "None",
+                                                                    "pinned_items": {},
+                                                                    "possibly_sensitive": false,
+                                                                    "privacy": {
+                                                                        "protected": false
+                                                                    },
+                                                                    "professional": {
+                                                                        "category": [
+                                                                            {
+                                                                                "icon_name": "IconBriefcaseStroke",
+                                                                                "id": 800,
+                                                                                "name": "Sports, Fitness & Recreation"
+                                                                            }
+                                                                        ],
+                                                                        "professional_type": "Business",
+                                                                        "rest_id": "1711812638236442839"
+                                                                    },
+                                                                    "profile_bio": {
+                                                                        "description": "#LightTheBeam",
+                                                                        "entities": {
+                                                                            "description": {},
+                                                                            "url": {
+                                                                                "urls": [
+                                                                                    {
+                                                                                        "display_url": "Kings.com",
+                                                                                        "expanded_url": "https://Kings.com",
+                                                                                        "indices": [
+                                                                                            0,
+                                                                                            23
+                                                                                        ],
+                                                                                        "url": "https://t.co/83586wCeM3"
+                                                                                    }
+                                                                                ]
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    "profile_description_language": "qht",
+                                                                    "profile_image_shape": "Square",
+                                                                    "profile_metadata": {
+                                                                        "profile_interstitial_type": ""
+                                                                    },
+                                                                    "profile_translation": {
+                                                                        "translator_type": "none"
+                                                                    },
+                                                                    "relationship_counts": {
+                                                                        "followers": 1177774,
+                                                                        "following": 22694
+                                                                    },
+                                                                    "relationship_perspectives": {
+                                                                        "blocked_by": false,
+                                                                        "blocking": false,
+                                                                        "followed_by": false,
+                                                                        "following": false,
+                                                                        "live_following": false,
+                                                                        "muting": false
+                                                                    },
+                                                                    "rest_id": "667563",
+                                                                    "super_follow_eligible": false,
+                                                                    "super_followed_by": false,
+                                                                    "super_following": false,
+                                                                    "tweet_counts": {
+                                                                        "media_tweets": 7156,
+                                                                        "tweets": 7247
+                                                                    },
+                                                                    "verification": {
+                                                                        "verified": false,
+                                                                        "verified_type": "Business"
+                                                                    },
+                                                                    "website": {
+                                                                        "url": "https://t.co/83586wCeM3"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "entryId": "who-to-follow-2099646984649441280-user-813286",
+                                                    "item": {
+                                                        "clientEventInfo": {
+                                                            "component": "suggest_who_to_follow",
+                                                            "details": {
+                                                                "timelinesDetails": {
+                                                                    "controllerData": "DAACDAACDAABCgABAAAAAAAAAIAAAAAA",
+                                                                    "injectionType": "WhoToFollow",
+                                                                    "sourceData": "DAABCgABb/PBa2FvyeUKAAIAAAAAAAAAAAAIAAIAAAC0CAADAAAAAgwABQwAAgwAAgwAAQoAAQAAAAAAAACAAAAAAAA="
+                                                                }
+                                                            },
+                                                            "element": "user"
+                                                        },
+                                                        "itemContent": {
+                                                            "__typename": "TimelineUser",
+                                                            "itemType": "TimelineUser",
+                                                            "userDisplayType": "User",
+                                                            "user_results": {
+                                                                "result": {
+                                                                    "__typename": "User",
+                                                                    "action_counts": {
+                                                                        "favorites_count": 56
+                                                                    },
+                                                                    "affiliates_highlighted_label": {
+                                                                        "label": {
+                                                                            "badge": {
+                                                                                "url": "https://pbs.twimg.com/profile_images/1644381876465938433/7TiSgwTB_bigger.jpg"
+                                                                            },
+                                                                            "description": "The Office of Barack and Michelle Obama",
+                                                                            "url": {
+                                                                                "url": "https://twitter.com/TheObamaOffice",
+                                                                                "urlType": "DeepLink"
+                                                                            },
+                                                                            "userLabelDisplayType": "Badge",
+                                                                            "userLabelType": "BusinessLabel"
+                                                                        }
+                                                                    },
+                                                                    "avatar": {
+                                                                        "image_url": "https://pbs.twimg.com/profile_images/1329647526807543809/2SGvnHYV_normal.jpg"
+                                                                    },
+                                                                    "banner": {
+                                                                        "image_url": "https://pbs.twimg.com/profile_banners/813286/1712782825"
+                                                                    },
+                                                                    "core": {
+                                                                        "created_at": "Mon Mar 05 22:08:25 +0000 2007",
+                                                                        "name": "Barack Obama",
+                                                                        "screen_name": "BarackObama"
+                                                                    },
+                                                                    "follow_request_sent": false,
+                                                                    "has_graduated_access": true,
+                                                                    "id": "VXNlcjo4MTMyODY=",
+                                                                    "is_blue_verified": true,
+                                                                    "location": {
+                                                                        "location": "Washington, DC"
+                                                                    },
+                                                                    "media_permissions": {
+                                                                        "can_media_tag": false
+                                                                    },
+                                                                    "notifications_settings": {
+                                                                        "notifications_enabled": false
+                                                                    },
+                                                                    "parody_commentary_fan_label": "None",
+                                                                    "pinned_items": {},
+                                                                    "possibly_sensitive": false,
+                                                                    "privacy": {
+                                                                        "protected": false
+                                                                    },
+                                                                    "professional": {
+                                                                        "category": [],
+                                                                        "professional_type": "Creator",
+                                                                        "rest_id": "1471921151324602368"
+                                                                    },
+                                                                    "profile_bio": {
+                                                                        "description": "Dad, husband, President, citizen.",
+                                                                        "entities": {
+                                                                            "description": {},
+                                                                            "url": {
+                                                                                "urls": [
+                                                                                    {
+                                                                                        "display_url": "barackobamabooks.com",
+                                                                                        "expanded_url": "http://barackobamabooks.com",
+                                                                                        "indices": [
+                                                                                            0,
+                                                                                            23
+                                                                                        ],
+                                                                                        "url": "https://t.co/9EAGxkEB9p"
+                                                                                    }
+                                                                                ]
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    "profile_description_language": "en",
+                                                                    "profile_image_shape": "Circle",
+                                                                    "profile_metadata": {
+                                                                        "profile_interstitial_type": ""
+                                                                    },
+                                                                    "profile_translation": {
+                                                                        "translator_type": "regular"
+                                                                    },
+                                                                    "relationship_counts": {
+                                                                        "followers": 118997040,
+                                                                        "following": 500282
+                                                                    },
+                                                                    "relationship_perspectives": {
+                                                                        "blocked_by": false,
+                                                                        "blocking": false,
+                                                                        "followed_by": false,
+                                                                        "following": false,
+                                                                        "live_following": false,
+                                                                        "muting": false
+                                                                    },
+                                                                    "rest_id": "813286",
+                                                                    "super_follow_eligible": false,
+                                                                    "super_followed_by": false,
+                                                                    "super_following": false,
+                                                                    "tweet_counts": {
+                                                                        "media_tweets": 2847,
+                                                                        "tweets": 17543
+                                                                    },
+                                                                    "verification": {
+                                                                        "verified": false
+                                                                    },
+                                                                    "website": {
+                                                                        "url": "https://t.co/9EAGxkEB9p"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "entryId": "who-to-follow-2099646984649441280",
+                                        "sortIndex": "2099646984649441280"
+                                    },
+                                    {
+                                        "content": {
+                                            "__typename": "TimelineTimelineCursor",
+                                            "cursorType": "Top",
+                                            "entryType": "TimelineTimelineCursor",
+                                            "value": "DAAHCgABHSNxzuHAJxELAAIAAAAACAADAAAAAQAA"
+                                        },
+                                        "entryId": "cursor-top-2099646984649441281",
+                                        "sortIndex": "2099646984649441281"
+                                    },
+                                    {
+                                        "content": {
+                                            "__typename": "TimelineTimelineCursor",
+                                            "cursorType": "Bottom",
+                                            "entryType": "TimelineTimelineCursor",
+                                            "value": "DAAHCgABHSNxzuG___0LAAIAAAAACAADAAAAAgAA"
+                                        },
+                                        "entryId": "cursor-bottom-2099646984649441279",
+                                        "sortIndex": "2099646984649441279"
+                                    }
+                                ],
+                                "type": "TimelineAddEntries"
+                            },
+                            {
+                                "direction": "Bottom",
+                                "type": "TimelineTerminateTimeline"
+                            }
+                        ],
+                        "metadata": {
+                            "scribeConfig": {
+                                "page": "profileOriginals"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
