@@ -239,6 +239,27 @@ describe("jobs_tombstone.ts", () => {
       );
     });
 
+    it("should wait out the old banner the profile shows before the new one", async () => {
+      // Recorded on a real run: the save returns 200, then the profile page
+      // fetches the banner it already had and replaces it 200ms later. Reading
+      // once catches the old URL and calls a save that worked unchanged, which
+      // is why this failed four times and then passed with nothing altered.
+      answerWith(
+        [
+          "https://pbs.twimg.com/profile_banners/1/1789501624/1080x360",
+          "https://pbs.twimg.com/profile_banners/1/1789501624/1080x360",
+          "https://pbs.twimg.com/profile_banners/1/1789502153/1080x360",
+        ],
+        [],
+      );
+
+      const result = await TombstoneJobs.runJobTombstoneUpdateBanner(vm, 0);
+
+      expect(result).toBe(true);
+      expect(vm.finishJob).toHaveBeenCalledWith(0);
+      expect(vm.error).not.toHaveBeenCalled();
+    });
+
     it("should report a banner it could not set rather than claiming success", async () => {
       vi.spyOn(vm.getWebview()!, "executeJavaScript").mockResolvedValue(false);
 

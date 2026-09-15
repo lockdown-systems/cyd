@@ -28,6 +28,12 @@ const BANNER_IMAGE_SELECTOR = 'a[href$="/header_photo"] img';
 // failure.
 const BANNER_RENDER_TIMEOUT = 10000;
 
+// The page draws the banner it already had and swaps the new one in a moment
+// later, so the banner is read until it turns over rather than sampled once.
+// Recorded on a real run, the swap landed 200ms after the first paint.
+const BANNER_CHANGE_TRIES = 30;
+const BANNER_POLL_INTERVAL = 500;
+
 const AUDIENCE_SETTINGS_URL = "https://x.com/settings/audience_and_tagging";
 
 // The "Protect your posts" box is the first checkbox on the audience settings
@@ -61,7 +67,25 @@ async function clickSaveProfile(
 }
 
 /** The banner X serves on the profile, which is the only answer that counts. */
-async function readBannerURL(vm: XViewModel): Promise<string> {
+/** The banner the page is showing at this instant. */
+async function readBannerSrc(vm: XViewModel): Promise<string> {
+  return (
+    (await vm.getWebview()?.executeJavaScript(`
+        (() => {
+            const image = document.querySelector('${BANNER_IMAGE_SELECTOR}');
+            return image ? image.src : "";
+        })();
+    `)) ?? ""
+  );
+}
+
+/**
+ * Opens the profile and waits for it to draw a banner at all.
+ *
+ * Returns false when it never draws one, which is what an account with no
+ * banner looks like and is an answer rather than a failure.
+ */
+async function openProfileWithBanner(vm: XViewModel): Promise<boolean> {
   const profileURL = `https://x.com/${vm.account.xAccount?.username ?? ""}`;
   await vm.loadURLWithRateLimit(profileURL);
 
@@ -82,18 +106,45 @@ async function readBannerURL(vm: XViewModel): Promise<string> {
     if (!(error instanceof TimeoutError)) {
       throw error;
     }
-    vm.log("readBannerURL", "the profile rendered no banner");
+    vm.log("openProfileWithBanner", "the profile rendered no banner");
+    return false;
+  }
+  return true;
+}
+
+async function readBannerURL(vm: XViewModel): Promise<string> {
+  if (!(await openProfileWithBanner(vm))) {
+    return "";
+  }
+  return await readBannerSrc(vm);
+}
+
+/**
+ * Reads the banner back after a save, giving the page time to turn it over.
+ *
+ * The profile draws the banner it already had and replaces it a moment later,
+ * so asking once catches the old URL and reports a save that worked as one
+ * that changed nothing. Watching until it differs makes the answer the page
+ * settles on the one that counts, rather than whichever it happened to be
+ * showing when asked.
+ */
+async function readBannerURLAfterSave(
+  vm: XViewModel,
+  bannerBefore: string,
+): Promise<string> {
+  if (!(await openProfileWithBanner(vm))) {
     return "";
   }
 
-  return (
-    (await vm.getWebview()?.executeJavaScript(`
-        (() => {
-            const image = document.querySelector('${BANNER_IMAGE_SELECTOR}');
-            return image ? image.src : "";
-        })();
-    `)) ?? ""
-  );
+  let latest = "";
+  for (let attempt = 0; attempt < BANNER_CHANGE_TRIES; attempt++) {
+    latest = await readBannerSrc(vm);
+    if (latest !== bannerBefore) {
+      return latest;
+    }
+    await vm.sleep(BANNER_POLL_INTERVAL);
+  }
+  return latest;
 }
 
 /** The bio X serves back into the profile dialog. */
@@ -247,7 +298,7 @@ export async function runJobTombstoneUpdateBanner(
 
   // Read the banner back. A save that clicked cleanly and changed nothing is
   // exactly the failure this job kept reporting as success.
-  const bannerAfter = await readBannerURL(vm);
+  const bannerAfter = await readBannerURLAfterSave(vm, bannerBefore);
   if (bannerAfter === bannerBefore) {
     vm.log("runJobTombstoneUpdateBanner", ["banner unchanged", bannerBefore]);
     await vm.error(
