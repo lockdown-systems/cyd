@@ -36,7 +36,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         format: "iife",
-        inlineDynamicImports: true,
         entryFileNames: "assets/js/[name].[hash].js",
         assetFileNames: ({ names }) =>
           names?.some((name) => name.endsWith(".css"))
