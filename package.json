@@ -38,7 +38,7 @@
     "@fortawesome/fontawesome-free": "^7.2.0",
     "@rushstack/eslint-patch": "^1.15.0",
     "@types/bootstrap": "^5.2.10",
-    "better-sqlite3": "^12.10.0",
+    "better-sqlite3": "^12.11.1",
     "bootstrap": "^5.3.8",
     "chart.js": "^4.5.1",
     "cheerio": "^1.2.0",
@@ -97,7 +97,7 @@
     "@vue/test-utils": "^2.4.11",
     "archiver": "^8.0.0",
     "cross-env": "^10.1.0",
-    "electron": "^41.7.1",
+    "electron": "^41.10.7",
     "eslint": "^10.4.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-vue": "^10.9.2",
@@ -120,7 +120,6 @@
     "archive-static-sites/x-archive"
   ],
   "allowScripts": {
-    "better-sqlite3@12.10.0": true,
     "core-js@3.49.0": true,
     "electron-winstaller@5.4.0": true,
     "esbuild@0.25.12": true,
@@ -129,6 +128,7 @@
     "fs-xattr@0.3.1": true,
     "fsevents@2.3.3": true,
     "macos-alias@0.2.12": true,
-    "electron@41.7.1": true
+    "electron@41.10.7": true,
+    "better-sqlite3@12.11.1": true
   }
 }
