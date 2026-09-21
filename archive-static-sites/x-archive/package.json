@@ -2,22 +2,23 @@
   "name": "x-archive",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build"
+    "dev": "vite",
+    "serve": "vite",
+    "build": "vue-tsc --noEmit && vite build"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.3.1",
     "bootstrap": "^5.3.8",
     "vue": "^3.5.43",
-    "vue-class-component": "8.0.0-rc.1",
     "vue-router": "^4.6.3"
   },
   "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.9",
     "@types/node": "^25.9.8",
-    "@vue/cli-plugin-router": "~5.0.9",
-    "@vue/cli-plugin-typescript": "~5.0.9",
-    "@vue/cli-service": "~5.0.9",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vite": "^8.3.0",
+    "vue-tsc": "^3.3.11"
   }
 }
