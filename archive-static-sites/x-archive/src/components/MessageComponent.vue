@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Ref, defineProps, inject } from "vue";
+import { Ref, inject } from "vue";
 import { XArchive, Message } from "../types";
 import { formattedDate, formattedDatetime } from "../helpers";
 

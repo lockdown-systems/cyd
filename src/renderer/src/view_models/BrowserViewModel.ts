@@ -335,7 +335,7 @@ export class BrowserViewModel extends BaseViewModel {
           await webview.loadURL(url);
           // Sleep 2 seconds after loading each URL, to make everything more stable.
           // The X rate limits are intense, so this should not slow anything down.
-          this.sleep(2000);
+          await this.sleep(2000);
           this.log("loadURL", "URL loaded successfully");
           break;
         } catch (error) {
@@ -361,12 +361,12 @@ export class BrowserViewModel extends BaseViewModel {
                 throw new InternetDownError();
               } else {
                 tries = 0;
-                this.sleep(1000);
+                await this.sleep(1000);
               }
             }
           } else {
             // Wait 1 second before retrying
-            this.sleep(1000);
+            await this.sleep(1000);
           }
         }
       }

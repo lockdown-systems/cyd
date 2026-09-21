@@ -5,10 +5,7 @@ import type { XViewModel } from "../view_model";
 // own client sends. Seeded from the capture of 2026-09-14; see
 // docs/x-capture/findings-20260914.md, findings 8 and 11.
 export type XDeleteOperationName =
-  | "DeleteTweet"
-  | "DeleteRetweet"
-  | "UnfavoriteTweet"
-  | "DeleteBookmark";
+  "DeleteTweet" | "DeleteRetweet" | "UnfavoriteTweet" | "DeleteBookmark";
 
 export const X_DELETE_OPERATION_SEEDS: Record<
   XDeleteOperationName,

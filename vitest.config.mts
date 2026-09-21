@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      "/assets": resolve(__dirname, "src/renderer/public/assets"),
+      "/assets": resolve(import.meta.dirname, "src/renderer/public/assets"),
     },
   },
   esbuild: {
@@ -45,7 +45,7 @@ export default defineConfig({
         "assets/**",
         "testdata/**",
         "forge.config.ts",
-        "vite.*.config.ts",
+        "vite.*.config.mts",
         "eslint.config.mjs",
         "**/*.{test,spec}.{js,ts,tsx,vue}",
         "**/test-setup.ts",

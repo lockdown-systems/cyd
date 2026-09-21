@@ -1,7 +1,6 @@
 import path from "path";
 
 import { session } from "electron";
-import type { OnSendHeadersListenerDetails } from "electron";
 import log from "electron-log/main";
 import Database from "better-sqlite3";
 
@@ -71,8 +70,6 @@ export class XAccountController extends BaseAccountController<XProgress> {
   // What the last run of the parser saw. The index jobs use this to tell an
   // empty account from a timeline Cyd could not read.
   public timelineStats: XIndexTimelineStats = emptyXIndexTimelineStats();
-
-  protected cookies: Record<string, Record<string, string>> = {};
 
   // The operation identifiers X's own client used this session, keyed by
   // operation name. X rotates them whenever it redeploys and names the current
@@ -150,37 +147,14 @@ export class XAccountController extends BaseAccountController<XProgress> {
   }
 
   protected getAccountDataPath(): string {
-    if (!this.account) {
+    // A login that succeeds but never resolves the user leaves an account with
+    // no username. Returning "" hands callers the same empty path they already
+    // handle for a missing account, rather than throwing out of path.join.
+    if (!this.account?.username) {
       return "";
     }
     // Return the directory path (not the file path) since accountDataPath is also used for media directories
     return getAccountDataPath("X", this.account.username);
-  }
-
-  protected handleCookieTracking(details: OnSendHeadersListenerDetails): void {
-    // Keep track of cookies
-    // Wrap in try-catch because this runs in a webRequest callback (restricted context)
-    try {
-      if (details.requestHeaders) {
-        const hostname = new URL(details.url).hostname;
-        const cookieHeader = details.requestHeaders["Cookie"];
-        if (cookieHeader) {
-          const cookies = cookieHeader.split(";");
-          cookies.forEach((cookie: string) => {
-            const parts = cookie.split("=");
-            if (parts.length == 2) {
-              if (!this.cookies[hostname]) {
-                this.cookies[hostname] = {};
-              }
-              this.cookies[hostname][parts[0].trim()] = parts[1].trim();
-            }
-          });
-        }
-      }
-    } catch (error) {
-      // Silently log errors in webRequest callback to prevent crashes
-      log.error("XAccountController.handleCookieTracking error:", error);
-    }
   }
 
   refreshAccount() {
@@ -458,14 +432,20 @@ export class XAccountController extends BaseAccountController<XProgress> {
     return XArchive.importXArchiveURLs(this, tweet);
   }
 
+  // Ask the session for the cookie rather than harvesting it from a request
+  // header. Chromium stopped exposing the Cookie header to webRequest in
+  // Electron 44, and the header was only ever visible after some request had
+  // already carried it -- which a freshly added account has not yet made.
   async getCookie(hostname: string, name: string): Promise<string | null> {
     log.debug(
       `XAccountController.getCookie: hostname=${hostname}, name=${name}`,
     );
-    if (!this.cookies[hostname]) {
-      return null;
-    }
-    return this.cookies[hostname][name] || null;
+    const ses = session.fromPartition(`persist:account-${this.accountID}`);
+    const cookies = await ses.cookies.get({
+      url: `https://${hostname}/`,
+      name,
+    });
+    return cookies[0]?.value ?? null;
   }
 
   async deleteConfig(key: string) {

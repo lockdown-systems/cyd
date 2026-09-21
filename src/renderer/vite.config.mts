@@ -2,7 +2,7 @@ import { join } from "node:path";
 import { builtinModules } from "node:module";
 import type { ConfigEnv, UserConfig } from "vite";
 import { defineConfig } from "vite";
-import { pluginExposeRenderer } from "../../vite.base.config";
+import { pluginExposeRenderer } from "../../vite.base.config.mjs";
 import vue from "@vitejs/plugin-vue";
 import VueI18nPlugin from "@intlify/unplugin-vue-i18n/vite";
 
@@ -13,13 +13,16 @@ export default defineConfig((env) => {
   const name = "main_window";
 
   return {
-    root: __dirname,
+    root: import.meta.dirname,
     mode,
     base: "./",
     build: {
       outDir: `../../.vite/renderer/${name}`,
       rollupOptions: {
-        input: [join(__dirname, "src/main.ts"), join(__dirname, "index.html")],
+        input: [
+          join(import.meta.dirname, "src/main.ts"),
+          join(import.meta.dirname, "index.html"),
+        ],
         external: [...builtinModules.flatMap((p) => [p, `node:${p}`])],
       },
     },
@@ -34,7 +37,7 @@ export default defineConfig((env) => {
         },
       }),
       VueI18nPlugin({
-        include: [join(__dirname, "./src/i18n/locales/**/*.json")],
+        include: [join(import.meta.dirname, "./src/i18n/locales/**/*.json")],
         strictMessage: false, // Allow HTML in messages (we use v-html for rendering)
       }),
     ],

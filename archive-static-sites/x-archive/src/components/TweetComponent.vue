@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineProps, computed, inject, Ref } from "vue";
+import { computed, inject, Ref } from "vue";
 
 import {
   formattedDatetime,

@@ -16,20 +16,67 @@ import { fileURLToPath } from "node:url";
 
 import electron from "electron";
 
-const url = process.argv[2];
-if (!url) {
-  console.error("Usage: npm run finish-oauth '<callback URL>'");
+/**
+ * The callback URL to deliver, given whatever the browser was pointed at.
+ *
+ * The authorization server does not send the browser straight to the
+ * private-use callback. It sends it to its own redirect endpoint, carrying the
+ * callback in `redirect_uri` and the OAuth response -- `iss`, `state`, `code`
+ * -- beside it. That endpoint URL is what sits in the address bar when the
+ * handoff fails, so take it as given and do what the browser would have done:
+ * hang the response off the callback as a query string.
+ *
+ * Assembling that by hand invites putting an `&` where the `?` belongs, which
+ * parses as one long pathname, matches no route, and reports only "Invalid Cyd
+ * URL".
+ *
+ * A URL with no `redirect_uri` is passed through untouched, which covers a
+ * callback that was already assembled correctly.
+ */
+const callbackURLFrom = (raw) => {
+  let redirect;
+  try {
+    redirect = new URL(raw);
+  } catch {
+    return raw;
+  }
+
+  const callbackURI = redirect.searchParams.get("redirect_uri");
+  if (!callbackURI) {
+    return raw;
+  }
+
+  const response = new URLSearchParams(redirect.search);
+  // The redirect endpoint's own parameters, not part of the OAuth response.
+  response.delete("redirect_uri");
+  response.delete("redirect_mode");
+
+  const callback = new URL(callbackURI);
+  callback.search = response.toString();
+  return callback.toString();
+};
+
+const argument = process.argv[2];
+if (!argument) {
+  console.error("Usage: npm run finish-oauth '<URL>'");
+  console.error();
+  console.error("Either URL works:");
   console.error();
   console.error(
-    "The URL is the one the browser refused to open. Chromium logs it to the",
+    "  the one in the address bar when the browser refused the handoff,",
   );
-  console.error(
-    "devtools console; it starts with the scheme Cyd registers, for example",
-  );
-  console.error("social.cyd.dev-api:/atproto-oauth-callback/?code=...");
+  console.error("  https://bsky.social/oauth/authorize/redirect?...");
   console.error();
-  console.error("Quote it: the query string contains an ampersand.");
+  console.error("  or the callback itself,");
+  console.error("  social.cyd.dev-api:/atproto-oauth-callback/?code=...");
+  console.error();
+  console.error("Quote it: the query string contains ampersands.");
   process.exit(1);
+}
+
+const url = callbackURLFrom(argument);
+if (url !== argument) {
+  console.log("Delivering callback:", url);
 }
 
 // The app reads its config from `build/` relative to the working directory, and
