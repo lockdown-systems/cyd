@@ -130,5 +130,14 @@
     "macos-alias@0.2.12": true,
     "electron@41.10.7": true,
     "better-sqlite3@12.11.1": true
+  },
+  "overrides": {
+    "tar": "^7.5.22",
+    "tmp": "^0.2.7",
+    "image-size": "^2.0.4",
+    "mhtml2html": {
+      "jsdom": "^29.1.1"
+    },
+    "uuid": "^11.1.1"
   }
 }
