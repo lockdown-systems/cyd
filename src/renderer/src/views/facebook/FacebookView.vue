@@ -137,8 +137,7 @@ onMounted(async () => {
   await nextTick();
 
   const webview = platformViewRef.value?.webviewComponent as
-    | WebviewTag
-    | undefined;
+    WebviewTag | undefined;
   if (webview) {
     await initializePlatformView(webview);
     await startStateLoop();
