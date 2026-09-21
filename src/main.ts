@@ -110,9 +110,18 @@ const openCydURL = async (cydURL: string) => {
   const url = new URL(cydURL);
   // The query string can carry an OAuth authorization code, which is an
   // account-control credential, so only the path is ever logged or shown.
-  const urlWithoutQuery = new URL(url.toString());
-  urlWithoutQuery.search = "";
-  log.info(`Opening URL: ${urlWithoutQuery.toString()}`);
+  //
+  // Dropping url.search is not enough on its own. Joining the parameters to
+  // the path with "&" instead of "?" leaves no query string at all: the whole
+  // tail, code included, parses as pathname. So the path is cut at the first
+  // "&" too, and what is left is the route.
+  const parametersInPath = url.pathname.indexOf("&");
+  const routePath =
+    parametersInPath === -1
+      ? url.pathname
+      : url.pathname.slice(0, parametersInPath);
+  const urlWithoutParameters = `${url.protocol}${routePath}`;
+  log.info(`Opening URL: ${urlWithoutParameters}`);
 
   // If there's no main window, open one
   if (BrowserWindow.getAllWindows().length === 0) {
@@ -159,10 +168,17 @@ const openCydURL = async (cydURL: string) => {
     return;
   }
 
-  // For all other paths, show an error
+  // For all other paths, show an error. Reaching here with parameters buried
+  // in the path means the route itself was fine and only the separator was
+  // wrong, which is easy to do when assembling a callback by hand, so say
+  // which character to fix rather than only that something failed.
   dialog.showMessageBoxSync({
     title: "Cyd",
-    message: `Invalid Cyd URL: ${urlWithoutQuery.toString()}.`,
+    message: `Invalid Cyd URL: ${urlWithoutParameters}.`,
+    detail:
+      parametersInPath === -1
+        ? undefined
+        : 'The parameters must follow the path after a "?", not an "&".',
     type: "info",
   });
   return;
