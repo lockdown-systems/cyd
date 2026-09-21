@@ -120,15 +120,14 @@
     "archive-static-sites/x-archive"
   ],
   "allowScripts": {
+    "better-sqlite3@13.0.3": true,
+    "core-js@3.50.0": true,
     "electron-winstaller@5.4.0": true,
     "esbuild@0.25.12": true,
+    "esbuild@0.28.2": true,
     "fs-xattr@0.3.1": true,
     "fsevents@2.3.3": true,
-    "macos-alias@0.2.12": true,
-    "electron@41.10.7": true,
-    "better-sqlite3@12.11.1": true,
-    "esbuild@0.28.2": true,
-    "core-js@3.50.0": true
+    "macos-alias@0.2.12": true
   },
   "overrides": {
     "tar": "^7.5.22",

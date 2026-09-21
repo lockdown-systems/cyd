@@ -115,6 +115,23 @@ Verify each override by exercising the dependent, not by reading the audit. Chec
 
 Leave alone what has no fixed version at any release, and say so plainly in the report.
 
+## Phase 6 — reconcile allowScripts
+
+Approving as you go leaves the map full of versions that are no longer installed. Reconcile it once at the end, because a stale entry is invisible until the next person's install blocks.
+
+List what the tree actually asks for, and match the map to it:
+
+```bash
+node -e "const l=require('./package-lock.json');for(const[k,v]of Object.entries(l.packages||{}))if(v.hasInstallScript)console.log(k.replace('node_modules/','')+'@'+v.version)"
+npm install-scripts approve <pkg>   # re-approving prunes that package's stale pin
+```
+
+That listing undercounts: npm also runs an implicit `node-gyp rebuild` for any package shipping a `binding.gyp`, even when it declares no install script and the lockfile sets no `hasInstallScript`. better-sqlite3 is one, which is why it still needs an entry despite shipping prebuilds — the entry only matters on a platform with no prebuild, where the source build is the fallback.
+
+Delete by hand any entry whose package no longer runs a script at all. Electron from v42 is one: it downloads on first run instead.
+
+Finish with a plain `npm install`, and confirm `npm install-scripts ls` reports nothing blocked.
+
 ## Majors
 
 Minor-only is the default. When the minor pass is green, report the remaining advisories and **ask the user** whether to take majors — name the specific ones, what each is worth, and what it costs.
