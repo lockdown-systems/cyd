@@ -97,7 +97,7 @@
     "@vue/test-utils": "^2.5.1",
     "archiver": "^8.0.0",
     "cross-env": "^10.1.0",
-    "electron": "^41.10.7",
+    "electron": "^44.4.3",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-vue": "^10.11.0",
@@ -137,6 +137,7 @@
     "mhtml2html": {
       "jsdom": "^29.1.1"
     },
-    "uuid": "^11.1.1"
+    "uuid": "^11.1.1",
+    "node-abi": "^4.35.0"
   }
 }
