@@ -42,6 +42,8 @@ Construct a `Database`. A bare `require('better-sqlite3')` returns cleanly with 
 
 Record the metric, and get all four gates green *before* changing anything. An upgrade onto a red baseline cannot be read.
 
+Check that your npm matches the one in `Dockerfile`. A mismatch churns the lockfile on its own: npm 12 records a `libc` field on optional platform packages that npm 10 does not understand and silently strips, so the two versions fight over the same file across dev and the release build.
+
 Note `workspaces` in `package.json`: `archive-static-sites/x-archive` shares the root lockfile, so its dependencies are your problem too. `scripts/x-capture` is not a workspace and is not part of the build.
 
 ## Phase 1 — the native floor
