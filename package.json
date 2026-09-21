@@ -38,7 +38,7 @@
     "@fortawesome/fontawesome-free": "^7.3.1",
     "@rushstack/eslint-patch": "^1.15.0",
     "@types/bootstrap": "^5.2.10",
-    "better-sqlite3": "^12.11.1",
+    "better-sqlite3": "^13.0.3",
     "bootstrap": "^5.3.8",
     "chart.js": "^4.5.1",
     "cheerio": "^1.2.0",
@@ -79,7 +79,7 @@
     "@eslint/js": "^10.0.1",
     "@intlify/unplugin-vue-i18n": "^11.2.5",
     "@types/archiver": "^7.0.0",
-    "@types/better-sqlite3": "^7.6.13",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/electron-squirrel-startup": "^1.0.2",
     "@types/jest": "^30.0.0",
     "@types/jsdom": "^28.0.3",
@@ -120,16 +120,15 @@
     "archive-static-sites/x-archive"
   ],
   "allowScripts": {
-    "core-js@3.49.0": true,
     "electron-winstaller@5.4.0": true,
     "esbuild@0.25.12": true,
-    "esbuild@0.28.0": true,
-    "esbuild@0.27.7": true,
     "fs-xattr@0.3.1": true,
     "fsevents@2.3.3": true,
     "macos-alias@0.2.12": true,
     "electron@41.10.7": true,
-    "better-sqlite3@12.11.1": true
+    "better-sqlite3@12.11.1": true,
+    "esbuild@0.28.2": true,
+    "core-js@3.50.0": true
   },
   "overrides": {
     "tar": "^7.5.22",
