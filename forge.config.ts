@@ -160,8 +160,20 @@ const mimeTypeScheme = blueskyOAuthSchemeHandlerMimeTypeForMode(
 let osxSign: OsxSignOptions | undefined;
 let osxNotarize: NotaryToolCredentials | undefined;
 if (process.env.MACOS_RELEASE === "true") {
+  // Set by scripts/make.js, which also preflights that this identity actually
+  // exists in the keychain. Signing must not fall back to a hardcoded string
+  // here, or the preflight could pass while signing uses a different identity.
+  const identity = process.env.MACOS_SIGNING_IDENTITY;
+  if (!identity) {
+    throw new Error(
+      "MACOS_SIGNING_IDENTITY is not set. Build macOS releases via " +
+        "`npm run publish-dev` / `npm run publish-prod` so scripts/make.js can " +
+        "set it and verify the identity is in the keychain.",
+    );
+  }
+
   osxSign = {
-    identity: "Developer ID Application: Lockdown Systems LLC (G762K6CH36)",
+    identity,
     optionsForFile: (filePath) => {
       const entitlementDefault = path.join(
         assetsPath,
@@ -254,7 +266,13 @@ const config: ForgeConfig = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     osxNotarize: osxNotarize as any,
   },
-  rebuildConfig: {},
+  // Only better-sqlite3 is loaded inside Electron and needs rebuilding against
+  // Electron's headers. appdmg's native deps (macos-alias, fs-xattr) are
+  // build-time tools that run under Node, and macos-alias's nan does not
+  // compile against Electron 44's V8, which fails the whole package step.
+  rebuildConfig: {
+    onlyModules: ["better-sqlite3"],
+  },
   makers: [
     // Windows
     new MakerSquirrel({

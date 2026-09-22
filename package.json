@@ -8,8 +8,8 @@
   "authors": "Lockdown Systems LLC",
   "scripts": {
     "clean": "node ./scripts/clean.mjs",
-    "rebuild": "npx electron-rebuild --force",
-    "rebuild-clean": "rm -rf node_modules/better-sqlite3/build && npx electron-rebuild --force",
+    "rebuild": "npx electron-rebuild --force --only better-sqlite3",
+    "rebuild-clean": "rm -rf node_modules/better-sqlite3/build && npx electron-rebuild --force --only better-sqlite3",
     "postinstall": "node scripts/postinstall.js",
     "start": "electron-forge start",
     "dev": "electron-forge start",
@@ -130,9 +130,13 @@
     "macos-alias@0.2.12": true
   },
   "overrides": {
+    "yauzl": "^3.4.0",
     "tar": "^7.5.22",
     "tmp": "^0.2.7",
     "image-size": "^2.0.4",
+    "appdmg": {
+      "image-size": "^1.2.1"
+    },
     "mhtml2html": {
       "jsdom": "^29.1.1"
     },
