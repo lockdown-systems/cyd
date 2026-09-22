@@ -254,7 +254,13 @@ const config: ForgeConfig = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     osxNotarize: osxNotarize as any,
   },
-  rebuildConfig: {},
+  // Only better-sqlite3 is loaded inside Electron and needs rebuilding against
+  // Electron's headers. appdmg's native deps (macos-alias, fs-xattr) are
+  // build-time tools that run under Node, and macos-alias's nan does not
+  // compile against Electron 44's V8, which fails the whole package step.
+  rebuildConfig: {
+    onlyModules: ["better-sqlite3"],
+  },
   makers: [
     // Windows
     new MakerSquirrel({
