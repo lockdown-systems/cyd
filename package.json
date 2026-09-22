@@ -8,8 +8,8 @@
   "authors": "Lockdown Systems LLC",
   "scripts": {
     "clean": "node ./scripts/clean.mjs",
-    "rebuild": "npx electron-rebuild --force",
-    "rebuild-clean": "rm -rf node_modules/better-sqlite3/build && npx electron-rebuild --force",
+    "rebuild": "npx electron-rebuild --force --only better-sqlite3",
+    "rebuild-clean": "rm -rf node_modules/better-sqlite3/build && npx electron-rebuild --force --only better-sqlite3",
     "postinstall": "node scripts/postinstall.js",
     "start": "electron-forge start",
     "dev": "electron-forge start",
