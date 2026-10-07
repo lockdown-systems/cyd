@@ -16,14 +16,71 @@ const BATCH_COOLDOWN_MS = 5000;
 const PROCESSING_BACKOFF_MS = 60000;
 const MAX_PROCESSING_RETRIES = 15;
 
+/**
+ * Attributes and rendered text only: never `.value` (so we don't capture a password)
+ * Exported so the tests can run the shipping code against this
+ */
+export const BLOCKING_UI_JS = `(() => {
+  const text = (el) => ((el.innerText || el.textContent) || '').replace(/\\s+/g, ' ').trim();
+  const attr = (el, name) => (el.getAttribute ? el.getAttribute(name) : null);
+
+  return {
+    url: document.location ? document.location.href.split('?')[0] : '',
+    title: (document.title || '').slice(0, 120),
+    bodyText: text(document.body).slice(0, 500),
+    passwordInputCount: document.querySelectorAll('input[type="password"]').length,
+    passwordInputs: Array.from(document.querySelectorAll('input[type="password"]'))
+      .slice(0, 3)
+      .map((input) => ({
+        name: attr(input, 'name'),
+        id: attr(input, 'id'),
+        ariaLabel: attr(input, 'aria-label'),
+        placeholder: attr(input, 'placeholder'),
+        autocomplete: attr(input, 'autocomplete'),
+      })),
+    dialogs: Array.from(document.querySelectorAll('div[role="dialog"]'))
+      .slice(0, 5)
+      .map((dialog) => ({
+        ariaLabel: attr(dialog, 'aria-label'),
+        ariaModal: attr(dialog, 'aria-modal'),
+        hasPasswordInput: dialog.querySelector('input[type="password"]') !== null,
+        buttons: Array.from(dialog.querySelectorAll('div[role="button"], button'))
+          .slice(0, 8)
+          .map((button) => (attr(button, 'aria-label') || text(button)).slice(0, 40))
+          .filter((label) => label.length > 0),
+        text: text(dialog).slice(0, 300),
+      })),
+  };
+})()`;
+
+/**
+ * Describe whatever Facebook has put on screen, so an error report identifies the modal
+ * that blocked us such as a password confirmation
+ */
+async function describeBlockingUI(
+  vm: FacebookViewModel,
+): Promise<Record<string, unknown>> {
+  const result = await vm.safeExecuteJavaScript<Record<string, unknown>>(
+    BLOCKING_UI_JS,
+    "describeBlockingUI",
+  );
+  return result.success
+    ? result.value
+    : { error: `Could not inspect the page: ${result.error}` };
+}
+
 async function reportDeleteWallPostsError(
   vm: FacebookViewModel,
   jobIndex: number,
   errorType: AutomationErrorType,
   errorReportData: Record<string, unknown>,
 ) {
+  const blockingUI = await describeBlockingUI(vm);
+  vm.log("reportDeleteWallPostsError", { errorType, blockingUI });
+
   await vm.error(errorType, errorReportData, {
     currentURL: vm.webview?.getURL(),
+    blockingUI,
   });
   await Helpers.errorJob(vm, jobIndex);
 }
@@ -305,10 +362,11 @@ async function deleteCategory(
     // Select all currently loaded items
     const toggled = await toggleSelectAllCheckbox(vm, true);
     if (!toggled) {
-      vm.log(
-        "deleteCategory",
-        `Could not select items for category ${category.setting}`,
-      );
+      // Exits without an error report, so log the page
+      vm.log("deleteCategory", {
+        message: `Could not select items for category ${category.setting}`,
+        blockingUI: await describeBlockingUI(vm),
+      });
       break;
     }
 
