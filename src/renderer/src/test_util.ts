@@ -2,7 +2,12 @@ import { vi } from "vitest";
 import type { WebviewTag } from "electron";
 import type { Emitter, EventType } from "mitt";
 import mitt from "mitt";
-import type { Account, XAccount, FacebookAccount } from "../../shared_types";
+import type {
+  Account,
+  XAccount,
+  BlueskyLocalAccount,
+  FacebookAccount,
+} from "../../shared_types";
 import type { VueWrapper } from "@vue/test-utils";
 import { mount } from "@vue/test-utils";
 import { ref } from "vue";
@@ -96,6 +101,24 @@ export function createMockFacebookAccount(
   };
 }
 
+export function createMockBlueskyLocalAccount(
+  overrides?: Partial<BlueskyLocalAccount>,
+): BlueskyLocalAccount {
+  const now = new Date();
+  return {
+    uuid: "test-uuid-123",
+    createdAt: now,
+    updatedAt: now,
+    accessedAt: now,
+    did: null,
+    handle: null,
+    displayName: null,
+    profileImageDataURI: null,
+    connectedAt: null,
+    ...overrides,
+  };
+}
+
 /**
  * Creates a mock Account with default values that can be overridden
  * By default creates an X account, but can be customized for other types
@@ -106,7 +129,7 @@ export function createMockAccount(overrides?: Partial<Account>): Account {
     type: "X",
     sortOrder: 0,
     xAccount: createMockXAccount(),
-    blueskyAccount: null,
+    blueskyLocalAccount: null,
     facebookAccount: null,
     uuid: "test-uuid-123",
     ...overrides,
@@ -138,6 +161,35 @@ export function createMockWebview(): WebviewTag {
 }
 
 /**
+ * Every method the browser-automation layer adds to a view model. A platform
+ * built on the webview-free core must expose none of them.
+ */
+export const browserAutomationAPI = [
+  "init",
+  "destroy",
+  "getWebview",
+  "safeExecuteJavaScript",
+  "loadURL",
+  "loadBlank",
+  "waitForURL",
+  "waitForLoadingToFinish",
+  "waitForSelector",
+  "waitForSelectorWithinSelector",
+  "doesSelectorExist",
+  "countSelectorsFound",
+  "getScrollHeight",
+  "scrollToBottom",
+  "scrollToTop",
+  "scrollUp",
+  "scriptClickElement",
+  "scriptMouseoverElement",
+  "scriptGetInnerText",
+  "scriptGetAllInnerHTML",
+  "scriptSendClickInputEvent",
+  "clickElementByXPath",
+];
+
+/**
  * Creates a mock mitt emitter for testing
  * Used by view models for event emission
  */
@@ -152,6 +204,15 @@ export function createMockEmitter(): Emitter<Record<EventType, unknown>> {
  */
 export function mockElectronAPI() {
   const mockElectron = {
+    // Credential protection (used by the disclosure bar in App.vue)
+    getCredentialProtection: vi.fn().mockResolvedValue({
+      backend: "macos_keychain",
+      rawBackend: null,
+      platform: "darwin",
+      osProtected: true,
+      disclosureRequired: false,
+    }),
+
     // Database operations (used by all view models)
     database: {
       getAccount: vi.fn().mockResolvedValue(createMockAccount()),
@@ -177,7 +238,6 @@ export function mockElectronAPI() {
         likesDeleted: 0,
         bookmarksSaved: 0,
         bookmarksDeleted: 0,
-        conversationsDeleted: 0,
         accountsUnfollowed: 0,
         tweetsMigratedToBluesky: 0,
       }),
@@ -185,19 +245,13 @@ export function mockElectronAPI() {
       resetProgress: vi.fn().mockResolvedValue({
         currentJob: "",
         isIndexTweetsFinished: false,
-        isIndexConversationsFinished: false,
-        isIndexMessagesFinished: false,
         isIndexLikesFinished: false,
         isArchiveTweetsFinished: false,
         isArchiveLikesFinished: false,
         isIndexBookmarksFinished: false,
-        isDeleteDMsFinished: false,
         isUnfollowEveryoneFinished: false,
         tweetsIndexed: 0,
         retweetsIndexed: 0,
-        usersIndexed: 0,
-        conversationsIndexed: 0,
-        messagesIndexed: 0,
         likesIndexed: 0,
         unknownIndexed: 0,
         totalTweetsToArchive: 0,
@@ -207,8 +261,6 @@ export function mockElectronAPI() {
         likesArchived: 0,
         totalBookmarksToIndex: 0,
         bookmarksIndexed: 0,
-        totalConversations: 0,
-        conversationMessagesIndexed: 0,
         totalTweetsToDelete: 0,
         tweetsDeleted: 0,
         totalRetweetsToDelete: 0,
@@ -217,7 +269,6 @@ export function mockElectronAPI() {
         likesDeleted: 0,
         totalBookmarksToDelete: 0,
         bookmarksDeleted: 0,
-        conversationsDeleted: 0,
         accountsUnfollowed: 0,
         totalTweetsToMigrate: 0,
         migrateTweetsCount: 0,
@@ -245,21 +296,18 @@ export function mockElectronAPI() {
         tweetsIndexed: 0,
         retweetsIndexed: 0,
       }),
-      indexParseConversations: vi.fn().mockResolvedValue({
-        currentJob: "",
-        conversationsIndexed: 0,
-      }),
-      indexParseMessages: vi.fn().mockResolvedValue({
-        currentJob: "",
-        messagesIndexed: 0,
-      }),
       indexIsThereMore: vi.fn().mockResolvedValue(false),
-      indexMessagesStart: vi.fn().mockResolvedValue({
-        conversationIDs: [],
-        totalConversations: 0,
-      }),
-      indexConversationFinished: vi.fn().mockResolvedValue(undefined),
       resetThereIsMore: vi.fn().mockResolvedValue(undefined),
+      // By default, the session has observed no operation identifiers, so the
+      // resolver falls back to its seeded constants
+      getObservedGraphqlQueryIDs: vi.fn().mockResolvedValue({}),
+      // By default, X answered with a timeline that carried posts
+      indexTimelineStats: vi.fn().mockResolvedValue({
+        recognizedResponses: 1,
+        tweetEntries: 1,
+        tweetsSaved: 1,
+      }),
+      resetIndexTimelineStats: vi.fn().mockResolvedValue(undefined),
       getLatestResponseData: vi.fn().mockResolvedValue(""),
       archiveTweetsStart: vi.fn().mockResolvedValue({
         outputPath: "/test/path",
@@ -273,7 +321,6 @@ export function mockElectronAPI() {
       deleteLikesStart: vi.fn().mockResolvedValue({ tweets: [] }),
       deleteBookmarksStart: vi.fn().mockResolvedValue({ tweets: [] }),
       deleteTweet: vi.fn().mockResolvedValue(undefined),
-      deleteDMsMarkAllDeleted: vi.fn().mockResolvedValue(undefined),
       blueskyGetTweetCounts: vi.fn().mockResolvedValue({
         toMigrateTweets: [],
         alreadyMigratedTweets: [],
@@ -331,6 +378,29 @@ export function mockElectronAPI() {
       resetRateLimitInfo: vi.fn().mockResolvedValue(undefined),
     },
 
+    // Bluesky local account operations
+    Bluesky: {
+      openLocalAccount: vi.fn().mockResolvedValue(null),
+      getLocalAccountPaths: vi.fn().mockResolvedValue({
+        accountPath: "/tmp/Bluesky/test-uuid-123",
+        databasePath: "/tmp/Bluesky/test-uuid-123/data.sqlite3",
+        mediaPath: "/tmp/Bluesky/test-uuid-123/media",
+        stagingPath: "/tmp/Bluesky/test-uuid-123/staging",
+      }),
+      deleteLocalAccount: vi.fn().mockResolvedValue(undefined),
+      clearStagingAreas: vi.fn().mockResolvedValue(undefined),
+      connect: vi.fn().mockResolvedValue(true),
+      completeConnection: vi.fn().mockResolvedValue(true),
+      getProfile: vi.fn().mockResolvedValue(null),
+      disconnect: vi.fn().mockResolvedValue(undefined),
+    },
+
+    // Main-process events (used by pages that wait for an OAuth callback)
+    ipcRenderer: {
+      on: vi.fn(),
+      removeAllListeners: vi.fn(),
+    },
+
     // Analytics (used by all view models)
     trackEvent: vi.fn().mockResolvedValue(undefined),
 
@@ -348,14 +418,33 @@ export function mockElectronAPI() {
     // Power monitor (used by all view models)
     onPowerMonitorSuspend: vi.fn(),
     onPowerMonitorResume: vi.fn(),
+
+    // Power save blocker (held while an account has work running)
+    startPowerSaveBlocker: vi.fn().mockResolvedValue(1),
+    stopPowerSaveBlocker: vi.fn().mockResolvedValue(undefined),
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const previousWindow = (global as any).window;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (global as any).window = {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ...(global as any).window,
+    ...previousWindow,
     electron: mockElectron,
   };
+
+  // Spreading a window only copies enumerable own properties, which leaves the
+  // DOM event constructors behind, and the stand-ins this suite installs on the
+  // real window are not events jsdom will dispatch. Vue Test Utils builds every
+  // simulated event from `window.Event`, so a mounted component could not be
+  // typed into or submitted without a real one. `createEvent` is how jsdom
+  // hands back the genuine constructor after it has been shadowed.
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (global as any).window.Event =
+      globalThis.document?.createEvent("Event").constructor;
+  } catch {
+    // No DOM in this suite, so nothing will dispatch an event either.
+  }
 
   return mockElectron;
 }
@@ -390,6 +479,7 @@ export function spyOnElectronAPI() {
       getConfig: vi.spyOn(electron.X, "getConfig"),
       getCookie: vi.spyOn(electron.X, "getCookie"),
       indexParseTweets: vi.spyOn(electron.X, "indexParseTweets"),
+      indexTimelineStats: vi.spyOn(electron.X, "indexTimelineStats"),
       deleteTweet: vi.spyOn(electron.X, "deleteTweet"),
     },
     archive: {

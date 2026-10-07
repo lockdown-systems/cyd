@@ -3,6 +3,7 @@ import { ipcMain } from "electron";
 
 import { exec, getMainDatabase } from "./common";
 import { packageExceptionForReport } from "../util";
+import { isCredentialKey } from "../credentials/keys";
 
 // Types
 
@@ -34,6 +35,14 @@ export const setConfig = (
   value: string,
   db: Database.Database | null = null,
 ) => {
+  if (isCredentialKey(key)) {
+    // Cyd once wrote OAuth state and sessions here. The config table is
+    // plaintext, so this is now a bug, not a fallback: credentials belong in
+    // src/credentials.
+    throw new Error(
+      `Refusing to store a credential in the plaintext config table: ${key}`,
+    );
+  }
   if (!db) {
     db = getMainDatabase();
   }

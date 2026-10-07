@@ -55,7 +55,6 @@ function createXAccountFromDefaults(changes: object) {
     deleteRetweetsDaysOld: 0,
     deleteLikes: false,
     deleteBookmarks: false,
-    deleteDMs: false,
     unfollowEveryone: false,
     followingCount: 0,
     followersCount: 0,
@@ -74,7 +73,6 @@ test("UtilX.xRequiresPremium() returns false when saving", async () => {
     archiveTweetsHTML: true,
     archiveLikes: true,
     archiveBookmarks: true,
-    archiveDMs: true,
   });
   setJobsType(accountID, "save");
   expect(await UtilX.xRequiresPremium(accountID, xAccount)).toBe(false);
@@ -85,7 +83,6 @@ test("UtilX.xRequiresPremium() returns false when archiving", async () => {
     // Save everything
     archiveTweetsHTML: true,
     archiveBookmarks: true,
-    archiveDMs: true,
   });
   setJobsType(accountID, "archive");
   expect(await UtilX.xRequiresPremium(accountID, xAccount)).toBe(false);
@@ -102,7 +99,6 @@ test("UtilX.xRequiresPremium() returns false for only deleting tweets and retwee
     deleteRetweetsDaysOldEnabled: false,
     deleteLikes: false,
     deleteBookmarks: false,
-    deleteDMs: false,
     unfollowEveryone: false,
   });
   setJobsType(accountID, "delete");
@@ -117,7 +113,6 @@ test("UtilX.xRequiresPremium() returns true when choosing any delete options", a
     "deleteRetweetsDaysOldEnabled",
     "deleteLikes",
     "deleteBookmarks",
-    "deleteDMs",
     "unfollowEveryone",
   ];
   for (const option of deleteOptions) {

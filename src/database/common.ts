@@ -115,6 +115,30 @@ export const closeMainDatabase = () => {
 
 // Utils
 
+/**
+ * Describe statement parameters without revealing them.
+ *
+ * Numbers and nulls are structural enough to keep, while strings and buffers
+ * are reduced to their type and length: enough to debug a failing statement,
+ * never enough to leak a token, a key, or a private message.
+ */
+export const redactSQLParams = (
+  params: Array<number | string | bigint | Buffer | null>,
+): Array<number | string | bigint | null> => {
+  return params.map((param) => {
+    if (param === null) {
+      return null;
+    }
+    if (typeof param === "number" || typeof param === "bigint") {
+      return param;
+    }
+    if (Buffer.isBuffer(param)) {
+      return `<buffer:${param.length}>`;
+    }
+    return `<string:${String(param).length}>`;
+  });
+};
+
 export const exec = (
   db: Database.Database | null,
   sql: string,
@@ -136,7 +160,10 @@ export const exec = (
   }
 
   // Execute the query
-  log.debug("Executing SQL:", sql, "Params:", paramsConverted);
+  // Statement parameters routinely carry account data, and once carried
+  // credentials, so debug logs and error reports get their shape and never
+  // their values.
+  log.debug("Executing SQL:", sql, "Params:", redactSQLParams(paramsConverted));
   try {
     const stmt = db.prepare(sql);
     const ret = stmt[cmd](...paramsConverted);
@@ -147,7 +174,7 @@ export const exec = (
       JSON.stringify({
         exception: exception,
         sql: sql,
-        params: paramsConverted,
+        params: redactSQLParams(paramsConverted),
       }),
     );
   }

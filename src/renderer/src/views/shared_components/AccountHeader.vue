@@ -45,6 +45,25 @@ const onRemoveClicked = () => {
           <span class="label-text">@{{ account.xAccount?.username }}</span>
         </template>
       </template>
+      <template v-else-if="account.type == 'Bluesky'">
+        <template v-if="account.blueskyLocalAccount?.profileImageDataURI">
+          <span class="profile-image">
+            <img
+              :alt="t('common.profileImage')"
+              :src="account.blueskyLocalAccount?.profileImageDataURI"
+            />
+          </span>
+        </template>
+        <!-- A Bluesky local account has no profile until an identity is
+             connected, so fall back to the platform name. -->
+        <span class="label-text">
+          {{
+            account.blueskyLocalAccount?.handle
+              ? `@${account.blueskyLocalAccount.handle}`
+              : account.blueskyLocalAccount?.displayName || t("account.bluesky")
+          }}
+        </span>
+      </template>
       <template v-else-if="account.type == 'Facebook'">
         <template
           v-if="

@@ -33,7 +33,7 @@ export function indexTweet(
   // Add the tweet
   exec(
     controller.db,
-    "INSERT OR REPLACE INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, hasMedia, isReply, replyTweetID, replyUserID, isQuote, quotedTweet, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT OR REPLACE INTO tweet (username, tweetID, conversationID, createdAt, likeCount, quoteCount, replyCount, retweetCount, isLiked, isRetweeted, isBookmarked, text, path, hasMedia, isReply, replyTweetID, replyUserID, isQuote, quotedTweet, retweetedTweetID, addedToDatabaseAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     [
       userCore["screen_name"],
       tweetLegacy["id_str"],
@@ -56,6 +56,7 @@ export function indexTweet(
       tweetLegacy["quoted_status_permalink"]
         ? tweetLegacy["quoted_status_permalink"]["expanded"]
         : null,
+      tweetLegacy["retweeted_status_result"]?.result?.rest_id ?? null,
       new Date(),
     ],
   );

@@ -1,0 +1,52 @@
+{
+    "data": {
+        "user": {
+            "result": {
+                "__typename": "User",
+                "timeline": {
+                    "timeline": {
+                        "instructions": [
+                            {
+                                "type": "TimelineClearCache"
+                            },
+                            {
+                                "entries": [
+                                    {
+                                        "content": {
+                                            "__typename": "TimelineTimelineCursor",
+                                            "cursorType": "Top",
+                                            "entryType": "TimelineTimelineCursor",
+                                            "value": "DAABCgABHSNx3rEAJxEIAAMAAAABAAA"
+                                        },
+                                        "entryId": "cursor-top-2099647052551028737",
+                                        "sortIndex": "2099647052551028737"
+                                    },
+                                    {
+                                        "content": {
+                                            "__typename": "TimelineTimelineCursor",
+                                            "cursorType": "Bottom",
+                                            "entryType": "TimelineTimelineCursor",
+                                            "value": "DAABCgABHSNx3rD___4IAAMAAAACAAA"
+                                        },
+                                        "entryId": "cursor-bottom-2099647052551028736",
+                                        "sortIndex": "2099647052551028736"
+                                    }
+                                ],
+                                "type": "TimelineAddEntries"
+                            },
+                            {
+                                "direction": "Bottom",
+                                "type": "TimelineTerminateTimeline"
+                            }
+                        ],
+                        "metadata": {
+                            "scribeConfig": {
+                                "page": "profileReplies"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

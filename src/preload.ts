@@ -5,19 +5,25 @@ import {
   ResponseData,
   ArchiveInfo,
   BlueskyMigrationProfile,
+  CredentialProtection,
   // X
   XJob,
   XProgress,
   XArchiveStartResponse,
-  XIndexMessagesStartResponse,
   XDeleteTweetsStartResponse,
   XRateLimitInfo,
+  XIndexTimelineStats,
   XProgressInfo,
   XDatabaseStats,
   XDeleteReviewStats,
   XImportArchiveResponse,
   XMigrateTweetCounts,
   XAccount,
+  // Bluesky
+  BlueskyConnectStart,
+  BlueskyIdentityProfile,
+  BlueskyLocalAccount,
+  BlueskyLocalAccountPaths,
   // Facebook
   FacebookJob,
   FacebookProgressInfo,
@@ -60,6 +66,12 @@ const electronAPI = {
   },
   getDashURL: (): Promise<string> => {
     return ipcRenderer.invoke("getDashURL");
+  },
+  // How the operating system protects Cyd's persisted credentials. The
+  // renderer uses this to disclose an unprotected backend; it never receives
+  // a credential itself.
+  getCredentialProtection: (): Promise<CredentialProtection> => {
+    return ipcRenderer.invoke("credentials:getProtection");
   },
   isFeatureEnabled: (feature: string): Promise<boolean> => {
     return ipcRenderer.invoke("isFeatureEnabled", feature);
@@ -187,8 +199,12 @@ const electronAPI = {
     saveAccount: (accountJSON: string) => {
       ipcRenderer.invoke("database:saveAccount", accountJSON);
     },
-    deleteAccount: (accountID: number) => {
-      return ipcRenderer.invoke("database:deleteAccount", accountID);
+    deleteAccount: (accountID: number, confirmedAccountUUID?: string) => {
+      return ipcRenderer.invoke(
+        "database:deleteAccount",
+        accountID,
+        confirmedAccountUUID,
+      );
     },
   },
 
@@ -250,38 +266,22 @@ const electronAPI = {
     indexParseTweets: (accountID: number): Promise<XProgress> => {
       return ipcRenderer.invoke("X:indexParseTweets", accountID);
     },
-    indexParseLikes: (accountID: number): Promise<XProgress> => {
-      return ipcRenderer.invoke("X:indexParseLikes", accountID);
-    },
-    indexParseBookmarks: (accountID: number): Promise<XProgress> => {
-      return ipcRenderer.invoke("X:indexParseBookmarks", accountID);
-    },
-    indexParseConversations: (accountID: number): Promise<XProgress> => {
-      return ipcRenderer.invoke("X:indexParseConversations", accountID);
-    },
     indexIsThereMore: (accountID: number): Promise<boolean> => {
       return ipcRenderer.invoke("X:indexIsThereMore", accountID);
     },
     resetThereIsMore: (accountID: number) => {
       ipcRenderer.invoke("X:resetThereIsMore", accountID);
     },
-    indexMessagesStart: (
+    getObservedGraphqlQueryIDs: (
       accountID: number,
-    ): Promise<XIndexMessagesStartResponse> => {
-      return ipcRenderer.invoke("X:indexMessagesStart", accountID);
+    ): Promise<Record<string, string>> => {
+      return ipcRenderer.invoke("X:getObservedGraphqlQueryIDs", accountID);
     },
-    indexParseMessages: (accountID: number): Promise<XProgress> => {
-      return ipcRenderer.invoke("X:indexParseMessages", accountID);
+    indexTimelineStats: (accountID: number): Promise<XIndexTimelineStats> => {
+      return ipcRenderer.invoke("X:indexTimelineStats", accountID);
     },
-    indexConversationFinished: (
-      accountID: number,
-      conversationID: string,
-    ): Promise<void> => {
-      return ipcRenderer.invoke(
-        "X:indexConversationFinished",
-        accountID,
-        conversationID,
-      );
+    resetIndexTimelineStats: (accountID: number): Promise<void> => {
+      return ipcRenderer.invoke("X:resetIndexTimelineStats", accountID);
     },
     archiveTweetsStart: (accountID: number): Promise<XArchiveStartResponse> => {
       return ipcRenderer.invoke("X:archiveTweetsStart", accountID);
@@ -372,12 +372,6 @@ const electronAPI = {
         deleteType,
       );
     },
-    deleteDMsMarkAllDeleted: (accountID: number): Promise<void> => {
-      return ipcRenderer.invoke("X:deleteDMsMarkAllDeleted", accountID);
-    },
-    deleteDMsScrollToBottom: (accountID: number): Promise<void> => {
-      return ipcRenderer.invoke("X:deleteDMsScrollToBottom", accountID);
-    },
     unzipXArchive: (
       accountID: number,
       archivePath: string,
@@ -446,7 +440,7 @@ const electronAPI = {
     blueskyAuthorize: (
       accountID: number,
       handle: string,
-    ): Promise<boolean | string> => {
+    ): Promise<BlueskyConnectStart> => {
       return ipcRenderer.invoke("X:blueskyAuthorize", accountID, handle);
     },
     blueskyCallback: (
@@ -484,6 +478,55 @@ const electronAPI = {
     },
     initArchiveOnlyMode: (accountID: number): Promise<XAccount> => {
       return ipcRenderer.invoke("X:initArchiveOnlyMode", accountID);
+    },
+  },
+
+  // Bluesky functions
+  Bluesky: {
+    openLocalAccount: (
+      accountID: number,
+    ): Promise<BlueskyLocalAccount | null> => {
+      return ipcRenderer.invoke("Bluesky:openLocalAccount", accountID);
+    },
+    getLocalAccountPaths: (
+      accountID: number,
+    ): Promise<BlueskyLocalAccountPaths> => {
+      return ipcRenderer.invoke("Bluesky:getLocalAccountPaths", accountID);
+    },
+    connect: (
+      accountID: number,
+      handle: string,
+    ): Promise<BlueskyConnectStart> => {
+      return ipcRenderer.invoke("Bluesky:connect", accountID, handle);
+    },
+    completeConnection: (
+      accountID: number,
+      queryString: string,
+    ): Promise<true | string> => {
+      return ipcRenderer.invoke(
+        "Bluesky:completeConnection",
+        accountID,
+        queryString,
+      );
+    },
+    getProfile: (accountID: number): Promise<BlueskyIdentityProfile | null> => {
+      return ipcRenderer.invoke("Bluesky:getProfile", accountID);
+    },
+    disconnect: (accountID: number): Promise<void> => {
+      return ipcRenderer.invoke("Bluesky:disconnect", accountID);
+    },
+    deleteLocalAccount: (
+      accountID: number,
+      confirmedAccountUUID: string,
+    ): Promise<void> => {
+      return ipcRenderer.invoke(
+        "Bluesky:deleteLocalAccount",
+        accountID,
+        confirmedAccountUUID,
+      );
+    },
+    clearStagingAreas: (accountID: number): Promise<void> => {
+      return ipcRenderer.invoke("Bluesky:clearStagingAreas", accountID);
     },
   },
 

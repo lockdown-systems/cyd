@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { mount, VueWrapper } from "@vue/test-utils";
+import { mount, VueWrapper, flushPromises } from "@vue/test-utils";
 import AccountView from "./AccountView.vue";
 import {
   mockElectronAPI,
   createMockAccount,
+  createMockBlueskyLocalAccount,
   createMockFacebookAccount,
 } from "../test_util";
 import type { Account } from "../../../shared_types";
@@ -22,6 +23,15 @@ vi.mock("./x/XView.vue", () => ({
   default: {
     name: "XView",
     template: "<div>XView</div>",
+    props: ["account"],
+    emits: ["onRefreshClicked", "onRemoveClicked"],
+  },
+}));
+
+vi.mock("./bluesky/BlueskyView.vue", () => ({
+  default: {
+    name: "BlueskyView",
+    template: "<div>BlueskyView</div>",
     props: ["account"],
     emits: ["onRefreshClicked", "onRemoveClicked"],
   },
@@ -177,13 +187,16 @@ describe("AccountView", () => {
       expect(blueskyCard.exists()).toBe(true);
       expect(blueskyCard.text()).toContain("Bluesky");
       expect(blueskyCard.text()).toContain("AT Protocol");
+
+      // The Bluesky flag must not also unhide Facebook
+      expect(wrapper.find(".select-account-facebook").exists()).toBe(false);
     });
 
     it("should show Facebook option", async () => {
       window.electron.isFeatureEnabled = vi
         .fn()
         .mockImplementation((feature: string) => {
-          if (feature === "bluesky") return Promise.resolve(true);
+          if (feature === "facebook") return Promise.resolve(true);
           return Promise.resolve(false);
         });
 
@@ -209,7 +222,7 @@ describe("AccountView", () => {
       window.electron.isFeatureEnabled = vi
         .fn()
         .mockImplementation((feature: string) => {
-          if (feature === "bluesky") return Promise.resolve(true);
+          if (feature === "facebook") return Promise.resolve(true);
           return Promise.resolve(false);
         });
 
@@ -408,6 +421,56 @@ describe("AccountView", () => {
 
       expect(wrapper.text()).toContain("Unknown account type");
       expect(wrapper.text()).toContain("Something is wrong");
+    });
+  });
+
+  describe("Bluesky account type", () => {
+    const mountBlueskyAccount = (handle: string | null) => {
+      const account: Account = createMockAccount({
+        id: 7,
+        type: "Bluesky",
+        uuid: "018d5f7a-9b3c-7d10-8a2e-1f4c6b8d0e12",
+        xAccount: null,
+        blueskyLocalAccount: createMockBlueskyLocalAccount({
+          uuid: "018d5f7a-9b3c-7d10-8a2e-1f4c6b8d0e12",
+          handle,
+          displayName: handle ? "Alice" : null,
+        }),
+      });
+      return mount(AccountView, {
+        props: { account },
+        global: { plugins: [i18n] },
+      });
+    };
+
+    it("should render BlueskyView when account type is Bluesky", async () => {
+      wrapper = mountBlueskyAccount("alice.bsky.social");
+      await flushPromises();
+
+      expect(wrapper.findComponent({ name: "BlueskyView" }).exists()).toBe(
+        true,
+      );
+    });
+
+    it("should pass account prop to BlueskyView", async () => {
+      wrapper = mountBlueskyAccount("alice.bsky.social");
+      await flushPromises();
+
+      const blueskyView = wrapper.findComponent({ name: "BlueskyView" });
+      expect(blueskyView.props("account")).toMatchObject({
+        id: 7,
+        type: "Bluesky",
+      });
+    });
+
+    it("should forward onRemoveClicked from BlueskyView", async () => {
+      wrapper = mountBlueskyAccount(null);
+      await flushPromises();
+
+      const blueskyView = wrapper.findComponent({ name: "BlueskyView" });
+      await blueskyView.vm.$emit("onRemoveClicked");
+
+      expect(wrapper.emitted("onRemoveClicked")).toHaveLength(1);
     });
   });
 });

@@ -43,6 +43,7 @@ describe("jobs_delete.ts", () => {
       true,
     );
     vi.spyOn(vm, "scriptClickElementNth").mockResolvedValue(true);
+    vi.spyOn(vm, "scriptClickElementFirst").mockResolvedValue(true);
     vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
     vi.spyOn(vm, "waitForSelectorWithinSelector").mockResolvedValue(undefined);
   });
@@ -135,17 +136,31 @@ describe("jobs_delete.ts", () => {
       expect(vm.progress.newTweetsArchived).toBe(0);
     });
 
-    it("should load the with_replies page", async () => {
+    it("should load the profile page", async () => {
       mockElectron.X.deleteTweetsStart.mockResolvedValue(mockDeleteTweetsData);
       mockElectron.X.getCookie.mockResolvedValue("ct0-cookie");
 
       await DeleteJobs.runJobDeleteTweets(vm, 0);
 
       expect(vm.loadURLWithRateLimit).toHaveBeenCalledWith(
-        "https://x.com/testuser/with_replies",
+        "https://x.com/testuser",
       );
       expect(vm.showBrowser).toBe(false); // Should be hidden after loading
       expect(vm.showAutomationNotice).toBe(true);
+    });
+
+    it("should send DeleteTweet from the profile page", async () => {
+      mockElectron.X.deleteTweetsStart.mockResolvedValue(mockDeleteTweetsData);
+      mockElectron.X.getCookie.mockResolvedValue("ct0-cookie");
+
+      await DeleteJobs.runJobDeleteTweets(vm, 0);
+
+      expect(vm.graphqlDelete).toHaveBeenCalledWith(
+        "ct0-cookie",
+        "https://x.com/i/api/graphql/nxpZCY2K-I6QoFHAHeojFQ/DeleteTweet",
+        "https://x.com/testuser",
+        expect.stringContaining('"tweet_id":"1"'),
+      );
     });
 
     it("should return early if ct0 cookie not found", async () => {
@@ -326,7 +341,7 @@ describe("jobs_delete.ts", () => {
       expect(vm.progress.retweetsDeleted).toBe(0);
     });
 
-    it("should load the tweets page (not with_replies)", async () => {
+    it("should load the reposts page", async () => {
       mockElectron.X.deleteRetweetsStart.mockResolvedValue(
         mockDeleteRetweetsData,
       );
@@ -335,7 +350,23 @@ describe("jobs_delete.ts", () => {
       await DeleteJobs.runJobDeleteRetweets(vm, 0);
 
       expect(vm.loadURLWithRateLimit).toHaveBeenCalledWith(
-        "https://x.com/testuser",
+        "https://x.com/testuser/reposts",
+      );
+    });
+
+    it("should send DeleteRetweet naming the post that was reposted", async () => {
+      mockElectron.X.deleteRetweetsStart.mockResolvedValue({
+        tweets: [createMockTweetItem({ id: "10", rt: "reposted-10" })],
+      });
+      mockElectron.X.getCookie.mockResolvedValue("ct0-cookie");
+
+      await DeleteJobs.runJobDeleteRetweets(vm, 0);
+
+      expect(vm.graphqlDelete).toHaveBeenCalledWith(
+        "ct0-cookie",
+        "https://x.com/i/api/graphql/ZyZigVsNiFO6v1dEks1eWg/DeleteRetweet",
+        "https://x.com/testuser/reposts",
+        expect.stringContaining('"source_tweet_id":"reposted-10"'),
       );
     });
 
@@ -480,6 +511,21 @@ describe("jobs_delete.ts", () => {
 
       expect(vm.loadURLWithRateLimit).toHaveBeenCalledWith(
         "https://x.com/testuser/likes",
+        ["https://x.com/i/history/likes", "https://x.com/i/history"],
+      );
+    });
+
+    it("should send UnfavoriteTweet with X's own referrer", async () => {
+      mockElectron.X.deleteLikesStart.mockResolvedValue(mockDeleteLikesData);
+      mockElectron.X.getCookie.mockResolvedValue("ct0-cookie");
+
+      await DeleteJobs.runJobDeleteLikes(vm, 0);
+
+      expect(vm.graphqlDelete).toHaveBeenCalledWith(
+        "ct0-cookie",
+        "https://x.com/i/api/graphql/ZYKSe-w7KEslx3JhSIk5LA/UnfavoriteTweet",
+        "https://x.com/i/history/likes",
+        expect.stringContaining('"tweet_id":"100"'),
       );
     });
 
@@ -614,6 +660,23 @@ describe("jobs_delete.ts", () => {
 
       expect(vm.loadURLWithRateLimit).toHaveBeenCalledWith(
         "https://x.com/i/bookmarks",
+        ["https://x.com/i/history"],
+      );
+    });
+
+    it("should send DeleteBookmark with X's own referrer", async () => {
+      mockElectron.X.deleteBookmarksStart.mockResolvedValue(
+        mockDeleteBookmarksData,
+      );
+      mockElectron.X.getCookie.mockResolvedValue("ct0-cookie");
+
+      await DeleteJobs.runJobDeleteBookmarks(vm, 0);
+
+      expect(vm.graphqlDelete).toHaveBeenCalledWith(
+        "ct0-cookie",
+        "https://x.com/i/api/graphql/Wlmlj2-xzyS1GN3a6cj-mQ/DeleteBookmark",
+        "https://x.com/i/history",
+        expect.stringContaining('"tweet_id":"1000"'),
       );
     });
 
@@ -677,152 +740,6 @@ describe("jobs_delete.ts", () => {
         expect.objectContaining({ item: expect.any(Object) }),
         true,
       );
-    });
-  });
-
-  describe("runJobDeleteDMs", () => {
-    it("should track analytics event on start", async () => {
-      // Mock no conversations (empty)
-      vi.spyOn(vm, "waitForSelector").mockRejectedValue(
-        new TimeoutError("Timeout"),
-      );
-      vi.spyOn(vm, "waitForLoadingToFinish").mockResolvedValue(undefined);
-
-      await DeleteJobs.runJobDeleteDMs(vm, 0);
-
-      expect(mockElectron.trackEvent).toHaveBeenCalledWith(
-        PlausibleEvents.X_JOB_STARTED_DELETE_DMS,
-        navigator.userAgent,
-      );
-    });
-
-    it("should set correct UI state", async () => {
-      vi.spyOn(vm, "waitForSelector").mockRejectedValue(
-        new TimeoutError("Timeout"),
-      );
-
-      await DeleteJobs.runJobDeleteDMs(vm, 0);
-
-      expect(vm.showBrowser).toBe(true);
-      expect(vm.showAutomationNotice).toBe(true);
-      expect(vm.instructions).toContain("I'm deleting all your direct message");
-    });
-
-    it("should initialize progress counters", async () => {
-      vi.spyOn(vm, "waitForSelector").mockRejectedValue(
-        new TimeoutError("Timeout"),
-      );
-
-      await DeleteJobs.runJobDeleteDMs(vm, 0);
-
-      expect(vm.progress.isDeleteDMsFinished).toBeDefined();
-      expect(vm.progress.conversationsDeleted).toBe(0);
-    });
-
-    it("should complete when no conversations exist (no search field)", async () => {
-      // Mock timeout on search field (means no conversations)
-      vi.spyOn(vm, "waitForSelector").mockRejectedValue(
-        new TimeoutError("Timeout"),
-      );
-
-      const result = await DeleteJobs.runJobDeleteDMs(vm, 0);
-
-      expect(result).toBe(true);
-      expect(vm.progress.isDeleteDMsFinished).toBe(true);
-      expect(vm.finishJob).toHaveBeenCalledWith(0);
-    });
-
-    it("should handle successful DM deletion iteration", async () => {
-      // Simplest case: page loads, no conversations found
-      vi.spyOn(vm, "waitForSelector").mockRejectedValue(
-        new TimeoutError("Timeout"),
-      );
-
-      const result = await DeleteJobs.runJobDeleteDMs(vm, 0);
-
-      expect(result).toBe(true);
-      expect(vm.finishJob).toHaveBeenCalledWith(0);
-    });
-    it("should handle rate limit when loading DMs page", async () => {
-      let callCount = 0;
-      vi.spyOn(vm, "waitForSelector").mockImplementation(async () => {
-        callCount++;
-        if (callCount === 1) {
-          return undefined; // Search field exists (first load)
-        }
-        if (callCount === 2) {
-          // Conversation list times out (triggers rate limit check)
-          throw new TimeoutError("Timeout");
-        }
-        if (callCount === 3) {
-          return undefined; // Search field exists (reload after rate limit)
-        }
-        // After rate limit, no more conversations
-        throw new TimeoutError("Timeout");
-      });
-
-      mockElectron.X.isRateLimited
-        .mockResolvedValueOnce({
-          isRateLimited: true,
-          rateLimitReset: Date.now() + 1000,
-        })
-        .mockResolvedValueOnce({
-          isRateLimited: false,
-          rateLimitReset: 0,
-        });
-
-      await DeleteJobs.runJobDeleteDMs(vm, 0);
-
-      expect(vm.waitForRateLimit).toHaveBeenCalled();
-    });
-
-    it("should handle error after max retries", async () => {
-      let waitSelectorCallCount = 0;
-      vi.spyOn(vm, "waitForSelector").mockImplementation(async () => {
-        waitSelectorCallCount++;
-        // Search field exists (calls 1, 3, 5)
-        if (waitSelectorCallCount % 2 === 1) {
-          return undefined;
-        }
-        // Conversation list fails with a non-Timeout error (calls 2, 4, 6)
-        // This will cause retries and eventually trigger error
-        throw new Error("Unexpected error");
-      });
-
-      mockElectron.X.isRateLimited.mockResolvedValue({
-        isRateLimited: false,
-        rateLimitReset: 0,
-      });
-
-      const result = await DeleteJobs.runJobDeleteDMs(vm, 0);
-
-      expect(result).toBe(false);
-      expect(vm.error).toHaveBeenCalled();
-    });
-
-    it("should reload page between iterations when needed", async () => {
-      // Simple case: no conversations found
-      vi.spyOn(vm, "waitForSelector").mockRejectedValue(
-        new TimeoutError("Timeout"),
-      );
-
-      await DeleteJobs.runJobDeleteDMs(vm, 0);
-
-      // Should load DMs page at least once
-      expect(vm.loadURLWithRateLimit).toHaveBeenCalledWith(
-        "https://x.com/messages",
-      );
-    });
-
-    it("should emit progress submission event on completion", async () => {
-      vi.spyOn(vm, "waitForSelector").mockRejectedValue(
-        new TimeoutError("Timeout"),
-      );
-      const emitSpy = vi.spyOn(vm.emitter!, "emit");
-
-      await DeleteJobs.runJobDeleteDMs(vm, 0);
-
-      expect(emitSpy).toHaveBeenCalledWith("x-submit-progress-1");
     });
   });
 
@@ -919,7 +836,9 @@ describe("jobs_delete.ts", () => {
         }
         throw new TimeoutError("Timeout");
       });
-      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
+      // The unfollowed account's button becomes a "-follow" button, so the
+      // page has nothing left to unfollow and gets reloaded
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
       mockElectron.X.isRateLimited.mockResolvedValue({
         isRateLimited: false,
         rateLimitReset: 0,
@@ -928,8 +847,18 @@ describe("jobs_delete.ts", () => {
       const result = await DeleteJobs.runJobUnfollowEveryone(vm, 0);
 
       expect(result).toBe(true);
-      expect(vm.scriptMouseoverElementNth).toHaveBeenCalled();
-      expect(vm.scriptClickElementNth).toHaveBeenCalled();
+      expect(vm.progress.accountsUnfollowed).toBe(1);
+      // X's own identifier for the Following button, rather than the button
+      // inside the button inside the cell
+      expect(vm.countSelectorsFound).toHaveBeenCalledWith(
+        '[data-testid$="-unfollow"]',
+      );
+      expect(vm.scriptMouseoverElementFirst).toHaveBeenCalledWith(
+        '[data-testid$="-unfollow"]',
+      );
+      expect(vm.scriptClickElementFirst).toHaveBeenCalledWith(
+        '[data-testid$="-unfollow"]',
+      );
       expect(vm.scriptClickElement).toHaveBeenCalledWith(
         'button[data-testid="confirmationSheetConfirm"]',
       );
@@ -1008,7 +937,7 @@ describe("jobs_delete.ts", () => {
       });
       vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
       // Mouseover fails, triggering error
-      vi.spyOn(vm, "scriptMouseoverElementNth").mockResolvedValue(false);
+      vi.spyOn(vm, "scriptMouseoverElementFirst").mockResolvedValue(false);
       mockElectron.X.isRateLimited.mockResolvedValue({
         isRateLimited: false,
         rateLimitReset: 0,
@@ -1044,7 +973,7 @@ describe("jobs_delete.ts", () => {
         }
         throw new TimeoutError("Timeout");
       });
-      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(1);
+      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
       mockElectron.X.isRateLimited.mockResolvedValue({
         isRateLimited: false,
         rateLimitReset: 0,

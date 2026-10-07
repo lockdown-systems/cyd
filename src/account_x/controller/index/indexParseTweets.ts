@@ -15,7 +15,11 @@ export async function indexParseTweets(
   );
 
   for (let i = 0; i < controller.mitmController.responseData.length; i++) {
-    indexParseTweetsResponseData(controller, i);
+    // Stop at a rate limit, leaving the responses after it unprocessed so
+    // they are parsed once the limit has lifted
+    if (!indexParseTweetsResponseData(controller, i)) {
+      break;
+    }
   }
 
   return controller.progress;

@@ -1,5 +1,5 @@
 import { WebviewTag } from "electron";
-import { BaseViewModel } from "../BaseViewModel";
+import { BrowserViewModel } from "../BrowserViewModel";
 import {
   ArchiveInfo,
   emptyArchiveInfo,
@@ -30,7 +30,7 @@ import * as DeleteJobs from "./jobs_delete/index";
 import * as MigrateJobs from "./jobs_migrate_to_bluesky";
 import * as TombstoneJobs from "./jobs_tombstone";
 
-export class XViewModel extends BaseViewModel {
+export class XViewModel extends BrowserViewModel {
   public progress: XProgress = emptyXProgress();
   public rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
   public progressInfo: XProgressInfo = emptyXProgressInfo();
@@ -46,6 +46,11 @@ export class XViewModel extends BaseViewModel {
 
   // Variables related to debugging
   public debugAutopauseEndOfStep: boolean = false;
+
+  /** X error reports are about an X account, which a username names. */
+  protected get errorReportAccountLabel(): string {
+    return this.account?.xAccount?.username ?? "";
+  }
 
   async init(webview: WebviewTag) {
     if (
@@ -122,10 +127,6 @@ export class XViewModel extends BaseViewModel {
         if (this.account.xAccount?.archiveBookmarks) {
           jobTypes.push("indexBookmarks");
         }
-        if (this.account.xAccount?.archiveDMs) {
-          jobTypes.push("indexConversations");
-          jobTypes.push("indexMessages");
-        }
       }
 
       if (this.account.xAccount?.archiveMyData) {
@@ -135,10 +136,6 @@ export class XViewModel extends BaseViewModel {
         }
         if (this.account.xAccount?.archiveBookmarks) {
           jobTypes.push("indexBookmarks");
-        }
-        if (this.account.xAccount?.archiveDMs) {
-          jobTypes.push("indexConversations");
-          jobTypes.push("indexMessages");
         }
       }
 
@@ -161,9 +158,6 @@ export class XViewModel extends BaseViewModel {
         }
         if (this.account.xAccount?.unfollowEveryone) {
           jobTypes.push("unfollowEveryone");
-        }
-        if (this.account.xAccount?.deleteDMs) {
-          jobTypes.push("deleteDMs");
         }
       }
     }
@@ -265,11 +259,6 @@ export class XViewModel extends BaseViewModel {
     return Helpers.errorJob(this, jobIndex);
   }
 
-  // Load the DMs page, and return true if an error was triggered
-  async deleteDMsLoadDMsPage(): Promise<boolean> {
-    return DeleteJobs.deleteDMsLoadDMsPage(this);
-  }
-
   // Load the following page, and return true if an error was triggered
   async unfollowEveryoneLoadPage(): Promise<boolean> {
     return DeleteJobs.unfollowEveryoneLoadPage(this);
@@ -321,14 +310,6 @@ export class XViewModel extends BaseViewModel {
         await IndexJobs.runJobArchiveTweets(this, jobIndex);
         break;
 
-      case "indexConversations":
-        await IndexJobs.runJobIndexConversations(this, jobIndex);
-        break;
-
-      case "indexMessages":
-        await IndexJobs.runJobIndexMessages(this, jobIndex);
-        break;
-
       case "archiveBuild":
         await Helpers.runJobArchiveBuild(this, jobIndex);
         break;
@@ -359,10 +340,6 @@ export class XViewModel extends BaseViewModel {
 
       case "unfollowEveryone":
         await DeleteJobs.runJobUnfollowEveryone(this, jobIndex);
-        break;
-
-      case "deleteDMs":
-        await DeleteJobs.runJobDeleteDMs(this, jobIndex);
         break;
 
       case "migrateBluesky":

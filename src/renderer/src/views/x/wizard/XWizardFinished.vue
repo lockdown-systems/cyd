@@ -208,23 +208,6 @@ onMounted(async () => {
                   >)
                 </span>
               </li>
-              <li
-                v-if="
-                  model.account.xAccount?.archiveDMs ||
-                  (model.progress.conversationsIndexed ?? 0) > 0 ||
-                  (model.progress.messagesIndexed ?? 0) > 0
-                "
-              >
-                <i class="fa-solid fa-floppy-disk archive-bullet" />
-                <strong>{{
-                  model.progress.conversationsIndexed.toLocaleString()
-                }}</strong>
-                conversations, including
-                <strong>{{
-                  model.progress.messagesIndexed.toLocaleString()
-                }}</strong>
-                messages
-              </li>
             </ul>
 
             <p>
@@ -244,23 +227,6 @@ onMounted(async () => {
                   model.progress.newTweetsArchived.toLocaleString()
                 }}</strong>
                 tweets saved as HTML archives
-              </li>
-              <li
-                v-if="
-                  model.account.xAccount?.archiveDMs ||
-                  (model.progress.conversationsIndexed ?? 0) > 0 ||
-                  (model.progress.messagesIndexed ?? 0) > 0
-                "
-              >
-                <i class="fa-solid fa-floppy-disk archive-bullet" />
-                <strong>{{
-                  model.progress.conversationsIndexed.toLocaleString()
-                }}</strong>
-                conversations, including
-                <strong>{{
-                  model.progress.messagesIndexed.toLocaleString()
-                }}</strong>
-                messages
               </li>
             </ul>
 
@@ -323,13 +289,6 @@ onMounted(async () => {
                 }}</strong>
                 bookmarks
               </li>
-              <li v-if="model.account.xAccount?.deleteDMs">
-                <i class="fa-solid fa-fire delete-bullet" />
-                <strong>{{
-                  model.progress.conversationsDeleted.toLocaleString()
-                }}</strong>
-                direct message conversations
-              </li>
               <li v-if="model.account.xAccount?.unfollowEveryone">
                 <i class="fa-solid fa-fire delete-bullet" />
                 Unfollowed
@@ -337,6 +296,26 @@ onMounted(async () => {
                   model.progress.accountsUnfollowed.toLocaleString()
                 }}</strong>
                 accounts
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div v-if="jobsType == 'tombstone'" class="container mt-3">
+          <div class="finished">
+            <h2>{{ t("finished.youJustTombstoned") }}</h2>
+            <ul>
+              <li v-if="model.account.xAccount?.tombstoneUpdateBanner">
+                <i class="fa-solid fa-image delete-bullet" />
+                Updated your banner
+              </li>
+              <li v-if="model.account.xAccount?.tombstoneUpdateBio">
+                <i class="fa-solid fa-pen delete-bullet" />
+                Updated your bio
+              </li>
+              <li v-if="model.account.xAccount?.tombstoneLockAccount">
+                <i class="fa-solid fa-lock delete-bullet" />
+                Locked your account
               </li>
             </ul>
           </div>

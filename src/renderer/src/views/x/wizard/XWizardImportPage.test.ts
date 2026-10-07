@@ -212,7 +212,6 @@ describe("XWizardImportPage", () => {
         xAccount: {
           archiveTweets: false,
           archiveLikes: false,
-          archiveDMs: false,
         },
       });
 
@@ -237,7 +236,6 @@ describe("XWizardImportPage", () => {
         xAccount: {
           archiveTweets: true,
           archiveLikes: false,
-          archiveDMs: false,
         },
       });
 
@@ -262,32 +260,6 @@ describe("XWizardImportPage", () => {
         xAccount: {
           archiveTweets: false,
           archiveLikes: true,
-          archiveDMs: false,
-        },
-      });
-
-      wrapper = mount(XWizardImportPage, {
-        props: {
-          model: mockModel as XViewModel,
-        },
-        global: {
-          plugins: [i18n],
-        },
-      });
-
-      const importButton = wrapper
-        .findAll("button")
-        .find((btn) => btn.text().includes("I've Downloaded My Archive"));
-
-      expect((importButton!.element as HTMLButtonElement).disabled).toBe(false);
-    });
-
-    it("should enable import button when archiveDMs is selected", async () => {
-      const mockModel = createMockModel({
-        xAccount: {
-          archiveTweets: false,
-          archiveLikes: false,
-          archiveDMs: true,
         },
       });
 

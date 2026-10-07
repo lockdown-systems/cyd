@@ -49,3 +49,6 @@ CLAUDE_NOTES.md
 
 # CodeGraph (local code-intelligence index, machine-specific)
 .codegraph/
+
+# X capture sessions (raw exports and decoded output are never committed)
+capture/

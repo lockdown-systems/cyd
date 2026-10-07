@@ -9,6 +9,7 @@ import { getAccountRunning, setAccountRunning } from "../util";
 import CydAvatarComponent from "./shared_components/CydAvatarComponent.vue";
 
 import XView from "./x/XView.vue";
+import BlueskyView from "./bluesky/BlueskyView.vue";
 import FacebookView from "./facebook/FacebookView.vue";
 
 const { t } = useI18n();
@@ -42,7 +43,7 @@ const accountClicked = (accountType: string) => {
 
 onMounted(async () => {
   blueskyFeature.value = await window.electron.isFeatureEnabled("bluesky");
-  facebookFeature.value = await window.electron.isFeatureEnabled("bluesky");
+  facebookFeature.value = await window.electron.isFeatureEnabled("facebook");
 
   // Check if this account was already running and got interrupted
   if (await getAccountRunning(props.account.id)) {
@@ -169,6 +170,14 @@ onMounted(async () => {
 
     <template v-else-if="account.type == 'X'">
       <XView
+        :account="account"
+        @on-refresh-clicked="refresh"
+        @on-remove-clicked="emit('onRemoveClicked')"
+      />
+    </template>
+
+    <template v-else-if="account.type == 'Bluesky'">
+      <BlueskyView
         :account="account"
         @on-refresh-clicked="refresh"
         @on-remove-clicked="emit('onRemoveClicked')"

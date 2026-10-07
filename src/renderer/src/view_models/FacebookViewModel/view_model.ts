@@ -5,7 +5,7 @@ import {
   FacebookRateLimitInfo,
   emptyFacebookRateLimitInfo,
 } from "../../../../shared_types";
-import { BaseViewModel } from "../BaseViewModel";
+import { BrowserViewModel } from "../BrowserViewModel";
 import { AutomationErrorType } from "../../automation_errors";
 import { formatError } from "../../util";
 import { PlatformStates } from "../../types/PlatformStates";
@@ -95,7 +95,7 @@ function findProfilePictureURI(data: unknown): string | null {
   return null;
 }
 
-export class FacebookViewModel extends BaseViewModel {
+export class FacebookViewModel extends BrowserViewModel {
   public progress: FacebookProgress = emptyFacebookProgress();
   public rateLimitInfo: FacebookRateLimitInfo = emptyFacebookRateLimitInfo();
   public jobs: FacebookJob[] = [];
@@ -112,6 +112,14 @@ export class FacebookViewModel extends BaseViewModel {
     this.state = this.hasStoredIdentity()
       ? State.FacebookWizardDashboard
       : State.Login;
+  }
+
+  /**
+   * Facebook error reports are about a Facebook account, which a username
+   * names.
+   */
+  protected get errorReportAccountLabel(): string {
+    return this.account?.facebookAccount?.username ?? "";
   }
 
   async init(webview: WebviewTag) {

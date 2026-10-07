@@ -10,9 +10,10 @@ import { createMockXViewModel } from "../test_util";
 
 describe("helpers_likes.ts", () => {
   let vm: XViewModel;
+  let mockElectron: ReturnType<typeof mockElectronAPI>;
 
   beforeEach(() => {
-    mockElectronAPI();
+    mockElectron = mockElectronAPI();
     vm = createMockXViewModel({
       xAccount: createMockXAccount({ username: "testuser" }),
     });
@@ -26,18 +27,13 @@ describe("helpers_likes.ts", () => {
   });
 
   describe("deleteLikeItem", () => {
-    it("should call graphqlDelete with correct parameters for like", async () => {
-      await DeleteHelpers.deleteLikeItem(
-        vm,
-        "test-ct0",
-        "tweet-123",
-        "testuser",
-      );
+    it("should call graphqlDelete with the operation X's own client sends", async () => {
+      await DeleteHelpers.deleteLikeItem(vm, "test-ct0", "tweet-123");
 
       expect(vm.graphqlDelete).toHaveBeenCalledWith(
         "test-ct0",
         "https://x.com/i/api/graphql/ZYKSe-w7KEslx3JhSIk5LA/UnfavoriteTweet",
-        "https://x.com/testuser/likes",
+        "https://x.com/i/history/likes",
         JSON.stringify({
           variables: {
             tweet_id: "tweet-123",
@@ -54,7 +50,6 @@ describe("helpers_likes.ts", () => {
         vm,
         "test-ct0",
         "tweet-123",
-        "testuser",
       );
 
       expect(result).toBe(200);
@@ -62,13 +57,13 @@ describe("helpers_likes.ts", () => {
   });
 
   describe("deleteBookmarkItem", () => {
-    it("should call graphqlDelete with correct parameters for bookmark", async () => {
+    it("should call graphqlDelete with the operation X's own client sends", async () => {
       await DeleteHelpers.deleteBookmarkItem(vm, "test-ct0", "tweet-456");
 
       expect(vm.graphqlDelete).toHaveBeenCalledWith(
         "test-ct0",
         "https://x.com/i/api/graphql/Wlmlj2-xzyS1GN3a6cj-mQ/DeleteBookmark",
-        "https://x.com/i/bookmarks",
+        "https://x.com/i/history",
         JSON.stringify({
           variables: {
             tweet_id: "tweet-456",
@@ -78,12 +73,17 @@ describe("helpers_likes.ts", () => {
       );
     });
 
-    it("should not require username parameter", async () => {
-      // Bookmarks don't need username in the referer URL
-      await DeleteHelpers.deleteBookmarkItem(vm, "ct0", "123");
+    it("should use an operation identifier observed this session", async () => {
+      mockElectron.X.getObservedGraphqlQueryIDs.mockResolvedValue({
+        DeleteBookmark: "rotated-identifier",
+      });
+
+      await DeleteHelpers.deleteBookmarkItem(vm, "test-ct0", "tweet-456");
 
       const call = vi.mocked(vm.graphqlDelete).mock.calls[0];
-      expect(call[2]).toBe("https://x.com/i/bookmarks");
+      expect(call[1]).toBe(
+        "https://x.com/i/api/graphql/rotated-identifier/DeleteBookmark",
+      );
     });
   });
 });

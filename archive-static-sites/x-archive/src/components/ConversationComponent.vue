@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineProps, inject, Ref } from "vue";
+import { inject, Ref } from "vue";
 import { XArchive, Conversation } from "../types";
 import UserComponent from "./UserComponent.vue";
 

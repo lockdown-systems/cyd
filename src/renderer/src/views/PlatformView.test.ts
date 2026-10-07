@@ -83,6 +83,7 @@ describe("PlatformView", () => {
       features: {
         hasU2FSupport: false,
         hasArchiveOnly: false,
+        usesWebview: true,
       },
       urls: {
         u2fDocs: "",
@@ -373,6 +374,43 @@ describe("PlatformView", () => {
       });
 
       expect(wrapper.find("webview").exists()).toBe(true);
+    });
+
+    it("should not render webview element for platforms that do not use one", () => {
+      wrapper = mount(PlatformView, {
+        props: {
+          account: mockAccount,
+          config: {
+            ...mockConfig,
+            features: { ...mockConfig.features, usesWebview: false },
+          },
+          model: mockModel,
+          currentState: PlatformStates.WizardStart,
+          progress: null,
+          currentJobs: [],
+          isPaused: false,
+          clickingEnabled: false,
+          userAuthenticated: false,
+          userPremium: false,
+          accountHeaderProps: {
+            account: mockAccount,
+            showRefreshButton: true,
+          },
+          speechBubbleProps: {
+            message: "Loading...",
+          },
+          automationNoticeProps: {
+            showBrowser: false,
+            showAutomationNotice: false,
+          },
+          webviewProps: {},
+        },
+        global: {
+          plugins: [i18n],
+        },
+      });
+
+      expect(wrapper.find("webview").exists()).toBe(false);
     });
   });
 

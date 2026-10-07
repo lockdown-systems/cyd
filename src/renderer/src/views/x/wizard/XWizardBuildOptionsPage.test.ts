@@ -73,7 +73,9 @@ describe("XWizardBuildOptionsPage", () => {
       expect(wrapper.text()).toContain("Save my tweets");
       expect(wrapper.text()).toContain("Save my likes");
       expect(wrapper.text()).toContain("Save my bookmarks");
-      expect(wrapper.text()).toContain("Save my direct messages");
+      expect(wrapper.text()).toContain(
+        "X replaced direct messages with X Chat",
+      );
     });
 
     it("should render nested HTML option under tweets", async () => {

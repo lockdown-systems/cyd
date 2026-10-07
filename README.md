@@ -16,3 +16,9 @@ Download the latest version of Cyd at [https://cyd.social/download/](https://cyd
 ## Documentation
 
 Learn all about how to use Cyd, what features it has, and how to get involved in the open source project, including how to request features and report bugs, at the [Cyd Documentation](https://docs.cyd.social) website.
+
+## Contributing
+
+Read the our [For Contributors](https://cyd.social/docs/contributing/contributors) page for the Code of Conduct, legal stuff, etc.
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for how to build and run Cyd from source.

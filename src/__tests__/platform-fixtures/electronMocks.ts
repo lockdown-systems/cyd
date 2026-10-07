@@ -11,12 +11,34 @@ interface HandlerStore {
 interface SessionStoreValue {
   instance: Record<string, unknown>;
   handlers: HandlerStore;
+  // Keyed by "hostname\u0000name", mirroring what session.cookies.get matches on
+  cookieJar: Map<string, string>;
 }
 
 const handlerStore: Record<string, SessionStoreValue> = {};
 
 const shellMockImpl = {
   openExternal: vi.fn(async () => Promise.resolve()),
+};
+
+// Tests run without a real OS credential facility, so safeStorage is a
+// reversible stand-in. Tests that care about an unprotected or missing
+// backend override these mocks.
+//
+// Real Electron couples these two on Linux: whenever Chromium falls back to
+// the basic_text password store, isEncryptionAvailable() returns false. A test
+// that overrides only the backend name describes a machine that cannot exist.
+const safeStorageMockImpl = {
+  isEncryptionAvailable: vi.fn(() => true),
+  getSelectedStorageBackend: vi.fn(() => "gnome_libsecret"),
+  encryptString: vi.fn((plaintext: string) => Buffer.from(`enc:${plaintext}`)),
+  decryptString: vi.fn((ciphertext: Buffer) => {
+    const text = ciphertext.toString();
+    if (!text.startsWith("enc:")) {
+      throw new Error("Unable to decrypt");
+    }
+    return text.slice("enc:".length);
+  }),
 };
 
 const createHandlerStore = (): HandlerStore => ({
@@ -41,7 +63,8 @@ const ensureTempDir = (): string => {
 
 const createSession = (partition: string): Record<string, unknown> => {
   const handlers = createHandlerStore();
-  handlerStore[partition] = { instance: {}, handlers };
+  const cookieJar = new Map<string, string>();
+  handlerStore[partition] = { instance: {}, handlers, cookieJar };
 
   const sessionInstance = {
     webRequest: {
@@ -58,6 +81,12 @@ const createSession = (partition: string): Record<string, unknown> => {
     fetch: vi.fn(async () => ({ status: 200 })),
     closeAllConnections: vi.fn(async () => Promise.resolve()),
     clearStorageData: vi.fn(async () => Promise.resolve()),
+    cookies: {
+      get: vi.fn(async ({ url, name }: { url: string; name: string }) => {
+        const value = cookieJar.get(`${new URL(url).hostname}\u0000${name}`);
+        return value === undefined ? [] : [{ name, value }];
+      }),
+    },
   } as Record<string, unknown>;
 
   handlerStore[partition].instance = sessionInstance;
@@ -89,6 +118,7 @@ vi.mock("electron", () => {
       on: vi.fn(),
     },
     shell: shellMockImpl,
+    safeStorage: safeStorageMockImpl,
   };
 });
 
@@ -104,6 +134,17 @@ export const electronMockHelpers = {
     );
   },
   getSessionMock: (partition: string) => handlerStore[partition]?.instance,
+  // Put a cookie in the session's jar without any request having carried it,
+  // which is the state a freshly added account is in.
+  seedCookie: (
+    partition: string,
+    hostname: string,
+    name: string,
+    value: string,
+  ) => {
+    handlerStore[partition]?.cookieJar.set(`${hostname}\u0000${name}`, value);
+  },
 };
 
 export const shellMock = shellMockImpl;
+export const safeStorageMock = safeStorageMockImpl;

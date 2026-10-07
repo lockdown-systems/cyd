@@ -4,7 +4,7 @@ import type { PlatformJob } from "./common";
 
 // status can be "pending", "running", "finished", "failed", "canceled"
 export type XJob = PlatformJob & {
-  jobType: string; // "login", "index", "archiveTweets", "archiveDMs", "deleteTweets", "deleteLikes", "deleteDMs", "downloadArchive"
+  jobType: string; // "login", "index", "archiveTweets", "deleteTweets", "deleteLikes", "downloadArchive"
   scheduledAt: Date;
 };
 
@@ -41,20 +41,14 @@ export type XProgress = {
   currentJob: string;
 
   isIndexTweetsFinished: boolean;
-  isIndexConversationsFinished: boolean;
-  isIndexMessagesFinished: boolean;
   isIndexLikesFinished: boolean;
   isArchiveTweetsFinished: boolean;
   isArchiveLikesFinished: boolean;
   isIndexBookmarksFinished: boolean;
-  isDeleteDMsFinished: boolean;
   isUnfollowEveryoneFinished: boolean;
 
   tweetsIndexed: number;
   retweetsIndexed: number;
-  usersIndexed: number;
-  conversationsIndexed: number;
-  messagesIndexed: number;
   likesIndexed: number;
   unknownIndexed: number;
 
@@ -68,9 +62,6 @@ export type XProgress = {
   totalBookmarksToIndex: number;
   bookmarksIndexed: number;
 
-  totalConversations: number;
-  conversationMessagesIndexed: number;
-
   totalTweetsToDelete: number;
   tweetsDeleted: number;
 
@@ -83,7 +74,6 @@ export type XProgress = {
   totalBookmarksToDelete: number;
   bookmarksDeleted: number;
 
-  conversationsDeleted: number;
   accountsUnfollowed: number;
 
   totalTweetsToMigrate: number;
@@ -103,20 +93,14 @@ export function emptyXProgress(): XProgress {
     currentJob: "",
 
     isIndexTweetsFinished: false,
-    isIndexConversationsFinished: false,
-    isIndexMessagesFinished: false,
     isIndexLikesFinished: false,
     isArchiveTweetsFinished: false,
     isArchiveLikesFinished: false,
     isIndexBookmarksFinished: false,
-    isDeleteDMsFinished: false,
     isUnfollowEveryoneFinished: false,
 
     tweetsIndexed: 0,
     retweetsIndexed: 0,
-    usersIndexed: 0,
-    conversationsIndexed: 0,
-    messagesIndexed: 0,
     likesIndexed: 0,
     unknownIndexed: 0,
 
@@ -130,9 +114,6 @@ export function emptyXProgress(): XProgress {
     totalBookmarksToIndex: 0,
     bookmarksIndexed: 0,
 
-    totalConversations: 0,
-    conversationMessagesIndexed: 0,
-
     totalTweetsToDelete: 0,
     tweetsDeleted: 0,
 
@@ -145,7 +126,6 @@ export function emptyXProgress(): XProgress {
     totalBookmarksToDelete: 0,
     bookmarksDeleted: 0,
 
-    conversationsDeleted: 0,
     accountsUnfollowed: 0,
 
     totalTweetsToMigrate: 0,
@@ -169,6 +149,7 @@ export type XTweetItem = {
   d: string; // createdAt
   i: string[]; // image filenames
   v: string[]; // video filenames
+  rt?: string; // retweetedTweetID, the post this one reposted
 };
 
 export type XTweetItemArchive = {
@@ -190,11 +171,6 @@ export function emptyXArchiveStartResponse(): XArchiveStartResponse {
   };
 }
 
-export type XIndexMessagesStartResponse = {
-  conversationIDs: string[];
-  totalConversations: number;
-};
-
 export type XRateLimitInfo = {
   isRateLimited: boolean;
   rateLimitReset: number;
@@ -204,6 +180,26 @@ export function emptyXRateLimitInfo(): XRateLimitInfo {
   return {
     isRateLimited: false,
     rateLimitReset: 0,
+  };
+}
+
+// How long to wait out a rate limit X reports without saying when it lifts
+export const DEFAULT_X_RATE_LIMIT_SECONDS = 900;
+
+export type XIndexTimelineStats = {
+  // Timeline responses recognized as one of X's timeline operations
+  recognizedResponses: number;
+  // Tweet entries found in those responses
+  tweetEntries: number;
+  // Tweet entries that produced a row in the database
+  tweetsSaved: number;
+};
+
+export function emptyXIndexTimelineStats(): XIndexTimelineStats {
+  return {
+    recognizedResponses: 0,
+    tweetEntries: 0,
+    tweetsSaved: 0,
   };
 }
 
@@ -256,7 +252,6 @@ export type XDatabaseStats = {
   likesDeleted: number;
   bookmarksSaved: number;
   bookmarksDeleted: number;
-  conversationsDeleted: number;
   accountsUnfollowed: number;
   tweetsMigratedToBluesky: number;
 };
@@ -271,7 +266,6 @@ export function emptyXDatabaseStats(): XDatabaseStats {
     likesDeleted: 0,
     bookmarksSaved: 0,
     bookmarksDeleted: 0,
-    conversationsDeleted: 0,
     accountsUnfollowed: 0,
     tweetsMigratedToBluesky: 0,
   };

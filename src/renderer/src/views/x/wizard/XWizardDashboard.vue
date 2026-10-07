@@ -22,9 +22,6 @@ const emit = defineEmits<{
   setState: [value: State];
 }>();
 
-// Feature flags
-const featureXTombstone = ref(false);
-
 const hasSomeData = ref(false);
 const lastDatabase = ref<Date | null>(null);
 const lastDelete = ref<Date | null>(null);
@@ -40,9 +37,6 @@ const lastDeleteTimeAgo = computed(() => {
 });
 
 onMounted(async () => {
-  featureXTombstone.value =
-    await window.electron.isFeatureEnabled("x_tombstone");
-
   hasSomeData.value = await xHasSomeData(props.model.account.id);
 
   const lastImportArchive = await xGetLastImportArchive(props.model.account.id);
@@ -155,9 +149,7 @@ onMounted(async () => {
           </div>
         </div>
         <div
-          v-if="
-            featureXTombstone && !props.model.account?.xAccount?.archiveOnly
-          "
+          v-if="!props.model.account?.xAccount?.archiveOnly"
           class="col-12 col-md-6 col-lg-5"
         >
           <div

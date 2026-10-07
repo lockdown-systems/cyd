@@ -1,6 +1,10 @@
 import fs from "fs";
+import os from "os";
 import path from "path";
 
+import crypto from "crypto";
+
+import Database from "better-sqlite3";
 import { beforeEach, afterEach, test, expect, vi } from "vitest";
 
 // Mock the helpers module
@@ -22,6 +26,15 @@ vi.mock("./util", () => ({
 }));
 import { getSettingsPath } from "./util";
 
+// Migration tests build their own database rather than sharing the settings
+// database every other test in this file migrates.
+const scratchDirs: string[] = [];
+const makeScratchDir = (): string => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cyd-migration-"));
+  scratchDirs.push(dir);
+  return dir;
+};
+
 // Mock electron's app.getVersion()
 vi.mock("electron", () => ({
   app: {
@@ -40,6 +53,10 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  while (scratchDirs.length > 0) {
+    fs.rmSync(scratchDirs.pop() as string, { recursive: true, force: true });
+  }
+
   // Make sure we close the database and clean up
   database.closeMainDatabase();
   const settingsPath = getSettingsPath();
@@ -50,7 +67,7 @@ afterEach(() => {
 
 // database tests
 
-test("config, account, xAccount, blueskyAccount, facebookAccount tables should be created", async () => {
+test("config, account, xAccount, blueskyLocalAccount, facebookAccount tables should be created", async () => {
   const db = database.getMainDatabase();
   const tables = await database.exec(
     db,
@@ -63,10 +80,120 @@ test("config, account, xAccount, blueskyAccount, facebookAccount tables should b
       expect.objectContaining({ name: "config" }),
       expect.objectContaining({ name: "account" }),
       expect.objectContaining({ name: "xAccount" }),
-      expect.objectContaining({ name: "blueskyAccount" }),
+      expect.objectContaining({ name: "blueskyLocalAccount" }),
       expect.objectContaining({ name: "facebookAccount" }),
     ]),
   );
+});
+
+test("the forward migration removes the dormant Bluesky model and its abandoned rows", () => {
+  // Build a database that stopped just before the Bluesky replacement, the way
+  // an installation that has been upgrading for months would look.
+  const legacyPath = path.join(makeScratchDir(), "legacy-bluesky.sqlite");
+  const legacyDB = new Database(legacyPath, {});
+  const replacementIndex = database.mainMigrations.findIndex((migration) =>
+    migration.name.startsWith("replace the dormant Bluesky model"),
+  );
+  expect(replacementIndex).toBeGreaterThan(0);
+  database.runMigrations(
+    legacyDB,
+    database.mainMigrations.slice(0, replacementIndex),
+  );
+
+  // An abandoned Bluesky account, plus an X account that must survive.
+  legacyDB
+    .prepare("INSERT INTO blueskyAccount (username) VALUES (?)")
+    .run("alice.bsky.social");
+  legacyDB
+    .prepare(
+      "INSERT INTO account (type, sortOrder, uuid, blueskyAccountID) VALUES (?, ?, ?, ?)",
+    )
+    .run("Bluesky", 0, "018d5f7a-9b3c-7d10-8a2e-1f4c6b8d0e12", 1);
+  legacyDB.prepare("INSERT INTO xAccount (username) VALUES (?)").run("alice");
+  legacyDB
+    .prepare(
+      "INSERT INTO account (type, sortOrder, uuid, xAccountId) VALUES (?, ?, ?, ?)",
+    )
+    .run("X", 1, "018d5f7a-9b3c-7d10-8a2e-1f4c6b8d0e13", 1);
+
+  database.runMigrations(legacyDB, database.mainMigrations);
+
+  // The abandoned rows are gone rather than adapted, and no Bluesky settings
+  // from the dormant model survive.
+  const accountTypes = legacyDB.prepare("SELECT type FROM account").all() as {
+    type: string;
+  }[];
+  expect(accountTypes.map((row) => row.type)).toEqual(["X"]);
+  expect(
+    (
+      legacyDB
+        .prepare("SELECT COUNT(*) AS count FROM blueskyLocalAccount")
+        .get() as { count: number }
+    ).count,
+  ).toEqual(0);
+  // The dormant table itself is gone.
+  expect(
+    legacyDB
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='blueskyAccount'",
+      )
+      .get(),
+  ).toBeUndefined();
+  const columnNames = (
+    legacyDB.prepare("PRAGMA table_info(blueskyLocalAccount)").all() as {
+      name: string;
+    }[]
+  ).map((column) => column.name);
+  expect(columnNames).toContain("did");
+  expect(columnNames).not.toContain("username");
+
+  // The obsolete link from account to the dormant model is gone too.
+  const accountColumns = (
+    legacyDB.prepare("PRAGMA table_info(account)").all() as {
+      name: string;
+    }[]
+  ).map((column) => column.name);
+  expect(accountColumns).not.toContain("blueskyAccountID");
+
+  // Migration history itself is preserved.
+  const migrationNames = (
+    legacyDB.prepare("SELECT name FROM migrations ORDER BY id").all() as {
+      name: string;
+    }[]
+  ).map((row) => row.name);
+  expect(migrationNames).toEqual(
+    database.mainMigrations.map((migration) => migration.name),
+  );
+
+  legacyDB.close();
+});
+
+test("re-running the Bluesky replacement on a migrated database is harmless", () => {
+  // A crash between applying a migration's schema and recording it must not
+  // leave Cyd unable to migrate on the next launch.
+  const dbPath = path.join(makeScratchDir(), "rerun-bluesky.sqlite");
+  const db = new Database(dbPath, {});
+  database.runMigrations(db, database.mainMigrations);
+
+  db.prepare(
+    "INSERT INTO account (type, sortOrder, uuid) VALUES (?, ?, ?)",
+  ).run("X", 0, "018d5f7a-9b3c-7d10-8a2e-1f4c6b8d0e13");
+  db.prepare("DELETE FROM migrations WHERE name = ?").run(
+    "replace the dormant Bluesky model with UUID-keyed local accounts",
+  );
+
+  expect(() =>
+    database.runMigrations(db, database.mainMigrations),
+  ).not.toThrow();
+
+  // The X account it carried across survives the rebuild.
+  expect(
+    (db.prepare("SELECT uuid FROM account").all() as { uuid: string }[]).map(
+      (row) => row.uuid,
+    ),
+  ).toEqual(["018d5f7a-9b3c-7d10-8a2e-1f4c6b8d0e13"]);
+
+  db.close();
 });
 
 test("setConfig should insert a new config value", () => {
@@ -157,36 +284,81 @@ test("getXAccounts should retrieve all XAccounts", () => {
   expect(accounts).toEqual(expect.arrayContaining([xAccount1, xAccount2]));
 });
 
-test("createBlueskyAccount should create a new BlueskyAccount", () => {
-  const blueskyAccount = database.createBlueskyAccount();
-  expect(blueskyAccount).toHaveProperty("id");
+test("createBlueskyLocalAccount should create a new Bluesky local account", () => {
+  const blueskyAccount = database.createBlueskyLocalAccount(
+    crypto.randomUUID(),
+  );
+  expect(blueskyAccount).toHaveProperty("uuid");
   expect(blueskyAccount).toHaveProperty("createdAt");
   expect(blueskyAccount).toHaveProperty("updatedAt");
   expect(blueskyAccount).toHaveProperty("accessedAt");
-  expect(blueskyAccount).toHaveProperty("username");
-  expect(blueskyAccount).toHaveProperty("profileImageDataURI");
-  expect(blueskyAccount).toHaveProperty("saveMyData");
-  expect(blueskyAccount).toHaveProperty("deleteMyData");
-  expect(blueskyAccount).toHaveProperty("archivePosts");
-  expect(blueskyAccount).toHaveProperty("archivePostsHTML");
-  expect(blueskyAccount).toHaveProperty("archiveLikes");
-  expect(blueskyAccount).toHaveProperty("deletePosts");
-  expect(blueskyAccount).toHaveProperty("deletePostsDaysOld");
-  expect(blueskyAccount).toHaveProperty("deletePostsDaysOldEnabled");
-  expect(blueskyAccount).toHaveProperty("deletePostsLikesThresholdEnabled");
-  expect(blueskyAccount).toHaveProperty("deletePostsLikesThreshold");
-  expect(blueskyAccount).toHaveProperty("deletePostsRepostsThresholdEnabled");
-  expect(blueskyAccount).toHaveProperty("deletePostsRepostsThreshold");
-  expect(blueskyAccount).toHaveProperty("deleteReposts");
-  expect(blueskyAccount).toHaveProperty("deleteRepostsDaysOld");
-  expect(blueskyAccount).toHaveProperty("deleteRepostsDaysOldEnabled");
-  expect(blueskyAccount).toHaveProperty("deleteLikes");
-  expect(blueskyAccount).toHaveProperty("deleteLikesDaysOld");
-  expect(blueskyAccount).toHaveProperty("deleteLikesDaysOldEnabled");
-  expect(blueskyAccount).toHaveProperty("followingCount");
-  expect(blueskyAccount).toHaveProperty("followersCount");
-  expect(blueskyAccount).toHaveProperty("postsCount");
-  expect(blueskyAccount).toHaveProperty("likesCount");
+  // A new local account has no Bluesky identity until it connects, and its
+  // profile data starts empty.
+  expect(blueskyAccount.did).toBeNull();
+  expect(blueskyAccount.handle).toBeNull();
+  expect(blueskyAccount.displayName).toBeNull();
+  expect(blueskyAccount.profileImageDataURI).toBeNull();
+});
+
+test("the dormant Bluesky model's settings are gone", () => {
+  const columns = database.exec(
+    database.getMainDatabase(),
+    "PRAGMA table_info(blueskyLocalAccount);",
+    [],
+    "all",
+  ) as { name: string }[];
+  const columnNames = columns.map((column) => column.name);
+
+  expect(columnNames).not.toContain("username");
+  expect(columnNames).not.toContain("archivePostsHTML");
+  expect(columnNames).not.toContain("deletePostsLikesThreshold");
+  expect(columnNames).not.toContain("likesCount");
+});
+
+test("a Bluesky local account's identity cannot change once it is known", () => {
+  const account = database.createBlueskyLocalAccount(crypto.randomUUID());
+  account.did = "did:plc:examplecarol";
+  database.saveBlueskyLocalAccount(account);
+
+  expect(() =>
+    database.saveBlueskyLocalAccount({
+      ...account,
+      did: "did:plc:someoneelse",
+    }),
+  ).toThrow(/identity cannot change/);
+
+  // Saving other profile changes keeps working.
+  expect(() =>
+    database.saveBlueskyLocalAccount({ ...account, handle: "carol.example" }),
+  ).not.toThrow();
+});
+
+test("a Bluesky identity can belong to only one local account", () => {
+  const first = database.createBlueskyLocalAccount(crypto.randomUUID());
+  first.did = "did:plc:examplealice";
+  database.saveBlueskyLocalAccount(first);
+
+  const second = database.createBlueskyLocalAccount(crypto.randomUUID());
+  second.did = "did:plc:examplealice";
+  expect(() => database.saveBlueskyLocalAccount(second)).toThrow();
+
+  // Local accounts that have never connected have no DID, and any number of
+  // them may exist at once.
+  const third = database.createBlueskyLocalAccount(crypto.randomUUID());
+  expect(third.did).toBeNull();
+  expect(() => database.saveBlueskyLocalAccount(third)).not.toThrow();
+});
+
+test("getBlueskyLocalAccountByDID finds the local account for a Bluesky identity", () => {
+  const account = database.createBlueskyLocalAccount(crypto.randomUUID());
+  account.did = "did:plc:examplebob";
+  account.handle = "bob.bsky.social";
+  database.saveBlueskyLocalAccount(account);
+
+  expect(
+    database.getBlueskyLocalAccountByDID("did:plc:examplebob")?.id,
+  ).toEqual(account.id);
+  expect(database.getBlueskyLocalAccountByDID("did:plc:nobody")).toBeNull();
 });
 
 test("createFacebookAccount should create a new FacebookAccount", () => {
@@ -200,19 +372,27 @@ test("createFacebookAccount should create a new FacebookAccount", () => {
   expect(facebookAccount).toHaveProperty("accountID");
 });
 
-test("saveBlueskyAccount should update an existing BlueskyAccount", () => {
-  const blueskyAccount = database.createBlueskyAccount();
-  blueskyAccount.username = "newUsername";
-  database.saveBlueskyAccount(blueskyAccount);
+test("saveBlueskyLocalAccount should update mutable profile data", () => {
+  const blueskyAccount = database.createBlueskyLocalAccount(
+    crypto.randomUUID(),
+  );
+  blueskyAccount.handle = "alice.bsky.social";
+  blueskyAccount.displayName = "Alice";
+  database.saveBlueskyLocalAccount(blueskyAccount);
 
   const db = database.getMainDatabase();
   const result = database.exec(
     db,
-    "SELECT * FROM blueskyAccount WHERE id = ?",
-    [blueskyAccount.id],
+    "SELECT * FROM blueskyLocalAccount WHERE uuid = ?",
+    [blueskyAccount.uuid],
     "get",
   );
-  expect(result).toEqual(expect.objectContaining({ username: "newUsername" }));
+  expect(result).toEqual(
+    expect.objectContaining({
+      handle: "alice.bsky.social",
+      displayName: "Alice",
+    }),
+  );
 });
 
 test("saveFacebookAccount should update an existing FacebookAccount", () => {
@@ -236,21 +416,27 @@ test("saveFacebookAccount should update an existing FacebookAccount", () => {
   );
 });
 
-test("getBlueskyAccount should retrieve the correct BlueskyAccount", () => {
-  const blueskyAccount = database.createBlueskyAccount();
-  database.saveBlueskyAccount(blueskyAccount);
+test("getBlueskyLocalAccount should retrieve the correct Bluesky local account", () => {
+  const blueskyAccount = database.createBlueskyLocalAccount(
+    crypto.randomUUID(),
+  );
+  database.saveBlueskyLocalAccount(blueskyAccount);
 
-  const retrievedAccount = database.getBlueskyAccount(blueskyAccount.id);
+  const retrievedAccount = database.getBlueskyLocalAccount(blueskyAccount.uuid);
   expect(retrievedAccount).toEqual(blueskyAccount);
 });
 
-test("getBlueskyAccounts should retrieve all BlueskyAccounts", () => {
-  const blueskyAccount1 = database.createBlueskyAccount();
-  const blueskyAccount2 = database.createBlueskyAccount();
-  database.saveBlueskyAccount(blueskyAccount1);
-  database.saveBlueskyAccount(blueskyAccount2);
+test("getBlueskyLocalAccounts should retrieve all Bluesky local accounts", () => {
+  const blueskyAccount1 = database.createBlueskyLocalAccount(
+    crypto.randomUUID(),
+  );
+  const blueskyAccount2 = database.createBlueskyLocalAccount(
+    crypto.randomUUID(),
+  );
+  database.saveBlueskyLocalAccount(blueskyAccount1);
+  database.saveBlueskyLocalAccount(blueskyAccount2);
 
-  const accounts = database.getBlueskyAccounts();
+  const accounts = database.getBlueskyLocalAccounts();
   expect(accounts).toEqual(
     expect.arrayContaining([blueskyAccount1, blueskyAccount2]),
   );

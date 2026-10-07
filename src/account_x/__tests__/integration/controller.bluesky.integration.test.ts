@@ -57,15 +57,15 @@ const createMethods = (): ServiceMethods => ({
   getProfile: vi.fn().mockImplementation(async () => createDefaultProfile()),
   callback: vi.fn().mockResolvedValue(true),
   disconnect: vi.fn().mockResolvedValue(undefined),
-  getTweetCounts: vi.fn().mockImplementation(
-    async (): Promise<XMigrateTweetCounts> => ({
+  getTweetCounts: vi
+    .fn()
+    .mockImplementation(async (): Promise<XMigrateTweetCounts> => ({
       totalTweetsCount: 1,
       totalRetweetsCount: 0,
       toMigrateTweets: [],
       cannotMigrateCount: 0,
       alreadyMigratedTweets: [],
-    }),
-  ),
+    })),
   migrateTweet: vi.fn().mockResolvedValue(true),
   deleteMigratedTweet: vi.fn().mockResolvedValue(true),
 });

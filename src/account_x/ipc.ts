@@ -9,7 +9,7 @@ import {
   XProgress,
   XArchiveStartResponse,
   XRateLimitInfo,
-  XIndexMessagesStartResponse,
+  XIndexTimelineStats,
   XDeleteTweetsStartResponse,
   XProgressInfo,
   ResponseData,
@@ -17,8 +17,10 @@ import {
   XDeleteReviewStats,
   XImportArchiveResponse,
   BlueskyMigrationProfile,
+  BlueskyConnectStart,
   XMigrateTweetCounts,
 } from "../shared_types";
+import { BLUESKY_DID_CONFIG_KEY } from "../credentials";
 import { getMITMController } from "../mitm";
 import { packageExceptionForReport } from "../util";
 
@@ -35,6 +37,32 @@ const getXAccountController = (accountID: number): XAccountController => {
   log.debug("Returning existing XAccountController for accountID", accountID);
   controllers[accountID].refreshAccount();
   return controllers[accountID];
+};
+
+/**
+ * Revoke this X account's Bluesky migration connection, if it has one.
+ *
+ * Deleting an account discards its credentials locally; this tells the
+ * authorization server to invalidate them too, so a copied refresh token
+ * cannot outlive the account. Accounts that never connected do no work and
+ * touch no network.
+ */
+export const revokeXBlueskyConnection = async (
+  accountID: number,
+): Promise<void> => {
+  const controller = getXAccountController(accountID);
+  if (!controller.db) {
+    controller.initDB();
+  }
+  if (!controller.db) {
+    // No account database means this account never connected to anything.
+    return;
+  }
+  const did = await controller.getConfig(BLUESKY_DID_CONFIG_KEY);
+  if (!did) {
+    return;
+  }
+  await controller.blueskyDisconnect();
 };
 
 export const defineIPCX = () => {
@@ -118,18 +146,6 @@ export const defineIPCX = () => {
   );
 
   ipcMain.handle(
-    "X:indexParseConversations",
-    async (_, accountID: number): Promise<XProgress> => {
-      try {
-        const controller = getXAccountController(accountID);
-        return await controller.indexParseConversations();
-      } catch (error) {
-        throw new Error(packageExceptionForReport(error as Error));
-      }
-    },
-  );
-
-  ipcMain.handle(
     "X:indexIsThereMore",
     async (_, accountID: number): Promise<boolean> => {
       try {
@@ -154,11 +170,11 @@ export const defineIPCX = () => {
   );
 
   ipcMain.handle(
-    "X:indexMessagesStart",
-    async (_, accountID: number): Promise<XIndexMessagesStartResponse> => {
+    "X:getObservedGraphqlQueryIDs",
+    async (_, accountID: number): Promise<Record<string, string>> => {
       try {
         const controller = getXAccountController(accountID);
-        return await controller.indexMessagesStart();
+        return await controller.getObservedGraphqlQueryIDs();
       } catch (error) {
         throw new Error(packageExceptionForReport(error as Error));
       }
@@ -166,11 +182,11 @@ export const defineIPCX = () => {
   );
 
   ipcMain.handle(
-    "X:indexParseMessages",
-    async (_, accountID: number): Promise<XProgress> => {
+    "X:indexTimelineStats",
+    async (_, accountID: number): Promise<XIndexTimelineStats> => {
       try {
         const controller = getXAccountController(accountID);
-        return await controller.indexParseMessages();
+        return await controller.indexTimelineStats();
       } catch (error) {
         throw new Error(packageExceptionForReport(error as Error));
       }
@@ -178,11 +194,11 @@ export const defineIPCX = () => {
   );
 
   ipcMain.handle(
-    "X:indexConversationFinished",
-    async (_, accountID: number, conversationID: string): Promise<void> => {
+    "X:resetIndexTimelineStats",
+    async (_, accountID: number): Promise<void> => {
       try {
         const controller = getXAccountController(accountID);
-        await controller.indexConversationFinished(conversationID);
+        await controller.resetIndexTimelineStats();
       } catch (error) {
         throw new Error(packageExceptionForReport(error as Error));
       }
@@ -435,18 +451,6 @@ export const defineIPCX = () => {
   );
 
   ipcMain.handle(
-    "X:deleteDMsMarkAllDeleted",
-    async (_, accountID: number): Promise<void> => {
-      try {
-        const controller = getXAccountController(accountID);
-        await controller.deleteDMsMarkAllDeleted();
-      } catch (error) {
-        throw new Error(packageExceptionForReport(error as Error));
-      }
-    },
-  );
-
-  ipcMain.handle(
     "X:unzipXArchive",
     async (
       _,
@@ -597,7 +601,11 @@ export const defineIPCX = () => {
 
   ipcMain.handle(
     "X:blueskyAuthorize",
-    async (_, accountID: number, handle: string): Promise<boolean | string> => {
+    async (
+      _,
+      accountID: number,
+      handle: string,
+    ): Promise<BlueskyConnectStart> => {
       try {
         const controller = getXAccountController(accountID);
         return await controller.blueskyAuthorize(handle);

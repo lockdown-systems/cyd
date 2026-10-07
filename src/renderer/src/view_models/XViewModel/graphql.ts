@@ -66,7 +66,7 @@ export async function graphqlGetViewerUser(
   while (tries < 3) {
     if (tries > 0) {
       // Sleep 1s before trying again
-      vm.sleep(1000);
+      await vm.sleep(1000);
     }
 
     vm.log("graphqlGetViewerUser", `try #${tries}`);

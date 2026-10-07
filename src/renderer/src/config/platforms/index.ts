@@ -4,6 +4,7 @@ import type {
 } from "../../types/PlatformConfig";
 import { XPlatformConfig } from "./XPlatformConfig";
 import { FacebookPlatformConfig } from "./FacebookPlatformConfig";
+import { BlueskyPlatformConfig } from "./BlueskyPlatformConfig";
 
 /**
  * Central registry of all platform configurations
@@ -11,6 +12,7 @@ import { FacebookPlatformConfig } from "./FacebookPlatformConfig";
 export const platformRegistry: PlatformConfigRegistry = {
   X: XPlatformConfig,
   Facebook: FacebookPlatformConfig,
+  Bluesky: BlueskyPlatformConfig,
 };
 
 /**

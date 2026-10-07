@@ -1,0 +1,49 @@
+{
+    "data": {
+        "user": {
+            "result": {
+                "__typename": "User",
+                "timeline": {
+                    "timeline": {
+                        "instructions": [
+                            {
+                                "entries": [
+                                    {
+                                        "content": {
+                                            "__typename": "TimelineTimelineCursor",
+                                            "cursorType": "Top",
+                                            "entryType": "TimelineTimelineCursor",
+                                            "value": "DAAHCgABHSNoiRBAJtMLAAIAAAATMTg5MjA0MjM5OTQxODg2Nzc3NQgAAwAAAAEAAA"
+                                        },
+                                        "entryId": "cursor-top-2099636789177221059",
+                                        "sortIndex": "2099636789177221059"
+                                    },
+                                    {
+                                        "content": {
+                                            "__typename": "TimelineTimelineCursor",
+                                            "cursorType": "Bottom",
+                                            "entryType": "TimelineTimelineCursor",
+                                            "value": "DAAHCgABHSNoiRA__8ALAAIAAAATMTg5MjA0MjM5OTQxODg2Nzc3NQgAAwAAAAIAAA"
+                                        },
+                                        "entryId": "cursor-bottom-2099636789177221058",
+                                        "sortIndex": "2099636789177221058"
+                                    }
+                                ],
+                                "type": "TimelineAddEntries"
+                            },
+                            {
+                                "direction": "Bottom",
+                                "type": "TimelineTerminateTimeline"
+                            }
+                        ],
+                        "metadata": {
+                            "scribeConfig": {
+                                "page": "profileOriginals"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

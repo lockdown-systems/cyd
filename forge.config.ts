@@ -12,6 +12,11 @@ import { PublisherS3 } from "@electron-forge/publisher-s3";
 import { type OsxSignOptions } from "@electron/packager/dist/types";
 import { type NotaryToolCredentials } from "@electron/notarize/lib/types";
 
+import {
+  blueskyOAuthCallbackSchemeForMode,
+  blueskyOAuthSchemeHandlerMimeTypeForMode,
+} from "./src/bluesky_oauth/constants";
+
 import { execSync } from "child_process";
 import path from "path";
 import fs from "fs";
@@ -137,30 +142,38 @@ function removeCodeSignatures(dir: string) {
   });
 }
 
-// For social.cyd.api and social.cyd.dev-api URLs
-const protocols = [];
-if (process.env.CYD_ENV == "prod") {
-  protocols.push({
-    name: "Cyd",
-    schemes: ["social.cyd.api"],
-  });
-} else {
-  protocols.push({
-    name: "Cyd Dev",
-    schemes: ["social.cyd.dev-api"],
-  });
-}
-const mimeTypeScheme =
-  process.env.CYD_ENV == "prod"
-    ? "x-scheme-handler/social.cyd.api"
-    : "x-scheme-handler/social.cyd.dev-api";
+// The scheme a Bluesky authorization comes back on. It is derived rather than
+// spelled out, because the app matches incoming callbacks against the same
+// derivation: the two disagreeing is what broke the callback in #699.
+const callbackScheme = blueskyOAuthCallbackSchemeForMode(process.env.CYD_ENV);
+const protocols = [
+  {
+    name: process.env.CYD_ENV == "prod" ? "Cyd" : "Cyd Dev",
+    schemes: [callbackScheme],
+  },
+];
+const mimeTypeScheme = blueskyOAuthSchemeHandlerMimeTypeForMode(
+  process.env.CYD_ENV,
+);
 
 // macOS signing and notarization options
 let osxSign: OsxSignOptions | undefined;
 let osxNotarize: NotaryToolCredentials | undefined;
 if (process.env.MACOS_RELEASE === "true") {
+  // Set by scripts/make.js, which also preflights that this identity actually
+  // exists in the keychain. Signing must not fall back to a hardcoded string
+  // here, or the preflight could pass while signing uses a different identity.
+  const identity = process.env.MACOS_SIGNING_IDENTITY;
+  if (!identity) {
+    throw new Error(
+      "MACOS_SIGNING_IDENTITY is not set. Build macOS releases via " +
+        "`npm run publish-dev` / `npm run publish-prod` so scripts/make.js can " +
+        "set it and verify the identity is in the keychain.",
+    );
+  }
+
   osxSign = {
-    identity: "Developer ID Application: Lockdown Systems LLC (G762K6CH36)",
+    identity,
     optionsForFile: (filePath) => {
       const entitlementDefault = path.join(
         assetsPath,
@@ -253,7 +266,13 @@ const config: ForgeConfig = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     osxNotarize: osxNotarize as any,
   },
-  rebuildConfig: {},
+  // Only better-sqlite3 is loaded inside Electron and needs rebuilding against
+  // Electron's headers. appdmg's native deps (macos-alias, fs-xattr) are
+  // build-time tools that run under Node, and macos-alias's nan does not
+  // compile against Electron 44's V8, which fails the whole package step.
+  rebuildConfig: {
+    onlyModules: ["better-sqlite3"],
+  },
   makers: [
     // Windows
     new MakerSquirrel({
@@ -375,17 +394,17 @@ const config: ForgeConfig = {
         {
           // `entry` is just an alias for `build.lib.entry` in the corresponding file of `config`.
           entry: "src/main.ts",
-          config: "vite.main.config.ts",
+          config: "vite.main.config.mts",
         },
         {
           entry: "src/preload.ts",
-          config: "vite.preload.config.ts",
+          config: "vite.preload.config.mts",
         },
       ],
       renderer: [
         {
           name: "main_window",
-          config: "src/renderer/vite.config.ts",
+          config: "src/renderer/vite.config.mts",
         },
       ],
     }),
