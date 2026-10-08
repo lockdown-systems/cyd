@@ -4,7 +4,7 @@ import { ref, provide, onMounted, onUnmounted, getCurrentInstance } from "vue";
 import { useI18n } from "vue-i18n";
 import semver from "semver";
 
-import { DeviceInfo, PlausibleEvents, UpdateStatus } from "./types";
+import { DeviceInfo, UpdateStatus } from "./types";
 import type { CredentialProtection } from "../../shared_types";
 import { getDeviceInfo } from "./util";
 import CydAPIClient, {
@@ -198,11 +198,6 @@ const platform = ref("");
 const credentialProtection = ref<CredentialProtection | null>(null);
 
 onMounted(async () => {
-  await window.electron.trackEvent(
-    PlausibleEvents.APP_OPENED,
-    navigator.userAgent,
-  );
-
   apiClient.value.initialize(await window.electron.getAPIURL());
 
   platform.value = await window.electron.getPlatform();

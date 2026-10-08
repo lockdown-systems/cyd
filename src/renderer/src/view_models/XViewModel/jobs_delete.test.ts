@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import * as DeleteJobs from "./jobs_delete";
 import type { XViewModel } from "./view_model";
-import { PlausibleEvents } from "../../types";
 import { RunJobsState } from "./types";
 import type { XDeleteTweetsStartResponse } from "../../../../shared_types";
 import {
@@ -60,19 +59,6 @@ describe("jobs_delete.ts", () => {
         createMockTweetItem({ id: "2", t: "Test tweet 2" }),
       ],
     };
-
-    it("should track analytics event on start", async () => {
-      mockElectron.X.deleteTweetsStart.mockResolvedValue({
-        tweets: [],
-      });
-
-      await DeleteJobs.runJobDeleteTweets(vm, 0);
-
-      expect(mockElectron.trackEvent).toHaveBeenCalledWith(
-        PlausibleEvents.X_JOB_STARTED_DELETE_TWEETS,
-        navigator.userAgent,
-      );
-    });
 
     it("should set config to reload user stats", async () => {
       mockElectron.X.deleteTweetsStart.mockResolvedValue({
@@ -277,19 +263,6 @@ describe("jobs_delete.ts", () => {
       ],
     };
 
-    it("should track analytics event on start", async () => {
-      mockElectron.X.deleteRetweetsStart.mockResolvedValue({
-        tweets: [],
-      });
-
-      await DeleteJobs.runJobDeleteRetweets(vm, 0);
-
-      expect(mockElectron.trackEvent).toHaveBeenCalledWith(
-        PlausibleEvents.X_JOB_STARTED_DELETE_RETWEETS,
-        navigator.userAgent,
-      );
-    });
-
     it("should set config to reload user stats", async () => {
       mockElectron.X.deleteRetweetsStart.mockResolvedValue({
         tweets: [],
@@ -441,19 +414,6 @@ describe("jobs_delete.ts", () => {
       ],
     };
 
-    it("should track analytics event on start", async () => {
-      mockElectron.X.deleteLikesStart.mockResolvedValue({
-        tweets: [],
-      });
-
-      await DeleteJobs.runJobDeleteLikes(vm, 0);
-
-      expect(mockElectron.trackEvent).toHaveBeenCalledWith(
-        PlausibleEvents.X_JOB_STARTED_DELETE_LIKES,
-        navigator.userAgent,
-      );
-    });
-
     it("should set config to reload user stats", async () => {
       mockElectron.X.deleteLikesStart.mockResolvedValue({
         tweets: [],
@@ -585,19 +545,6 @@ describe("jobs_delete.ts", () => {
         createMockTweetItem({ id: "2000", t: "Bookmarked tweet 2" }),
       ],
     };
-
-    it("should track analytics event on start", async () => {
-      mockElectron.X.deleteBookmarksStart.mockResolvedValue({
-        tweets: [],
-      });
-
-      await DeleteJobs.runJobDeleteBookmarks(vm, 0);
-
-      expect(mockElectron.trackEvent).toHaveBeenCalledWith(
-        PlausibleEvents.X_JOB_STARTED_DELETE_BOOKMARKS,
-        navigator.userAgent,
-      );
-    });
 
     it("should set config to reload user stats", async () => {
       mockElectron.X.deleteBookmarksStart.mockResolvedValue({
@@ -744,23 +691,6 @@ describe("jobs_delete.ts", () => {
   });
 
   describe("runJobUnfollowEveryone", () => {
-    it("should track analytics event on start", async () => {
-      vi.spyOn(vm, "waitForSelector").mockRejectedValue(
-        new TimeoutError("Timeout"),
-      );
-      mockElectron.X.isRateLimited.mockResolvedValue({
-        isRateLimited: false,
-        rateLimitReset: 0,
-      });
-
-      await DeleteJobs.runJobUnfollowEveryone(vm, 0);
-
-      expect(mockElectron.trackEvent).toHaveBeenCalledWith(
-        PlausibleEvents.X_JOB_STARTED_UNFOLLOW_EVERYONE,
-        navigator.userAgent,
-      );
-    });
-
     it("should set correct UI state", async () => {
       vi.spyOn(vm, "waitForSelector").mockRejectedValue(
         new TimeoutError("Timeout"),

@@ -1,5 +1,4 @@
 import type { XViewModel } from "./view_model";
-import { PlausibleEvents } from "../../types";
 import { AutomationErrorType } from "../../automation_errors";
 import { tombstoneUpdateBioCreditCydText } from "./types";
 import { TimeoutError } from "../automation_failures";
@@ -224,11 +223,6 @@ export async function runJobTombstoneUpdateBanner(
   vm: XViewModel,
   jobIndex: number,
 ): Promise<boolean> {
-  await window.electron.trackEvent(
-    PlausibleEvents.X_JOB_STARTED_TOMBSTONE_UPDATE_BANNER,
-    navigator.userAgent,
-  );
-
   vm.showBrowser = true;
   vm.instructions = vm.t("viewModels.x.jobs.tombstone.updateBanner");
   vm.showAutomationNotice = true;
@@ -342,11 +336,6 @@ export async function runJobTombstoneUpdateBio(
   vm: XViewModel,
   jobIndex: number,
 ): Promise<boolean> {
-  await window.electron.trackEvent(
-    PlausibleEvents.X_JOB_STARTED_TOMBSTONE_UPDATE_BIO,
-    navigator.userAgent,
-  );
-
   vm.showBrowser = true;
   vm.instructions = vm.t("viewModels.x.jobs.tombstone.updateBio");
   vm.showAutomationNotice = true;
@@ -418,11 +407,6 @@ export async function runJobTombstoneLockAccount(
   vm: XViewModel,
   jobIndex: number,
 ): Promise<boolean> {
-  await window.electron.trackEvent(
-    PlausibleEvents.X_JOB_STARTED_TOMBSTONE_LOCK_ACCOUNT,
-    navigator.userAgent,
-  );
-
   vm.showBrowser = true;
   vm.instructions = vm.t("viewModels.x.jobs.tombstone.lockAccount");
   vm.showAutomationNotice = true;

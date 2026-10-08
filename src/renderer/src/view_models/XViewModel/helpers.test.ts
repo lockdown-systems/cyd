@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import * as Helpers from "./helpers";
 import type { XViewModel } from "./view_model";
-import { PlausibleEvents } from "../../types";
 import { AutomationErrorType } from "../../automation_errors";
 import * as AuthOps from "./auth";
 import type { Account, XAccount } from "../../../../shared_types";
@@ -36,7 +35,6 @@ describe("helpers.ts", () => {
     (global as unknown as { window: { electron: unknown } }).window = {
       electron: {
         X: mockElectronX,
-        trackEvent: vi.fn().mockResolvedValue(undefined),
       },
     };
 
@@ -255,15 +253,6 @@ describe("helpers.ts", () => {
   });
 
   describe("runJobLogin", () => {
-    it("should track login event", async () => {
-      await Helpers.runJobLogin(mockVM as XViewModel, 0);
-
-      expect(window.electron.trackEvent).toHaveBeenCalledWith(
-        PlausibleEvents.X_JOB_STARTED_LOGIN,
-        navigator.userAgent,
-      );
-    });
-
     it("should show browser and set instructions", async () => {
       await Helpers.runJobLogin(mockVM as XViewModel, 0);
 
@@ -296,15 +285,6 @@ describe("helpers.ts", () => {
   });
 
   describe("runJobArchiveBuild", () => {
-    it("should track archive build event", async () => {
-      await Helpers.runJobArchiveBuild(mockVM as XViewModel, 0);
-
-      expect(window.electron.trackEvent).toHaveBeenCalledWith(
-        PlausibleEvents.X_JOB_STARTED_ARCHIVE_BUILD,
-        navigator.userAgent,
-      );
-    });
-
     it("should hide browser and set instructions", async () => {
       mockVM.showBrowser = true;
 

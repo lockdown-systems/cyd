@@ -12,7 +12,6 @@ import {
   AutomationErrorTypeToMessage,
   AutomationErrorType,
 } from "../automation_errors";
-import { PlausibleEvents } from "../types";
 import CydAPIClient from "../../../cyd-api-client";
 import { PostAutomationErrorReportAPIRequest } from "../../../cyd-api-client";
 import Modal from "bootstrap/js/dist/modal";
@@ -126,11 +125,6 @@ const shouldRetry = async () => {
 
 const submitReport = async () => {
   if (errorReports.value.length == 0) {
-    await window.electron.trackEvent(
-      PlausibleEvents.AUTOMATION_ERROR_REPORT_ERROR,
-      navigator.userAgent,
-    );
-
     await window.electron.showError(t("errorReport.error.noDetails"));
     hide();
     await shouldRetry();
@@ -175,22 +169,12 @@ const submitReport = async () => {
       postAutomationErrorReportResp !== false &&
       postAutomationErrorReportResp.error
     ) {
-      await window.electron.trackEvent(
-        PlausibleEvents.AUTOMATION_ERROR_REPORT_ERROR,
-        navigator.userAgent,
-      );
-
       console.error(
         "Error posting automation error report:",
         postAutomationErrorReportResp.message,
       );
       await window.electron.showError(t("errorReport.error.submissionError"));
     } else {
-      await window.electron.trackEvent(
-        PlausibleEvents.AUTOMATION_ERROR_REPORT_SUBMITTED,
-        navigator.userAgent,
-      );
-
       await window.electron.database.updateErrorReportSubmitted(
         errorReports.value[i].id,
       );
@@ -205,11 +189,6 @@ const submitReport = async () => {
 };
 
 const doNotSubmitReport = async () => {
-  await window.electron.trackEvent(
-    PlausibleEvents.AUTOMATION_ERROR_REPORT_NOT_SUBMITTED,
-    navigator.userAgent,
-  );
-
   // Dismiss the error reports
   const accountID = errorReports.value[0].accountID;
   await window.electron.database.dismissNewErrorReports(accountID);

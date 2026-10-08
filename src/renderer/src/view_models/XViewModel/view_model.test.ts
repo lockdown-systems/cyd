@@ -107,7 +107,6 @@ describe("XViewModel", () => {
         X: mockElectronX,
         archive: mockElectronArchive,
         database: mockElectronDatabase,
-        trackEvent: vi.fn().mockResolvedValue(undefined),
         onPowerMonitorSuspend: vi.fn(),
         onPowerMonitorResume: vi.fn(),
         shouldOpenDevtools: vi.fn().mockResolvedValue(false),

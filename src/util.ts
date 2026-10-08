@@ -117,36 +117,6 @@ export async function findOpenPort(): Promise<number> {
   });
 }
 
-export const trackEvent = (
-  eventName: string,
-  userAgent: string,
-  plausibleDomain: string,
-) => {
-  // Track an event using Plausible
-  // https://plausible.io/docs/events-api
-
-  // Run the fetch request asynchronously without blocking
-  setTimeout(async () => {
-    try {
-      await fetch("https://plausible.io/api/event", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "User-Agent": userAgent,
-        },
-        body: JSON.stringify({
-          name: eventName,
-          url: `https://${plausibleDomain}/`,
-          domain: plausibleDomain,
-        }),
-      });
-    } catch (error) {
-      // Fail silently
-      console.warn("trackEvent error:", error);
-    }
-  }, 0);
-};
-
 export const packageExceptionForReport = (error: Error) => {
   return JSON.stringify({
     message: error.message,

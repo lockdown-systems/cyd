@@ -43,7 +43,6 @@ import {
   getResourcesPath,
   getSettingsPath,
   getDataPath,
-  trackEvent,
   packageExceptionForReport,
   isFeatureEnabled,
 } from "./util";
@@ -55,7 +54,6 @@ interface Config {
   mode: string;
   apiURL: string;
   dashURL: string;
-  plausibleDomain: string;
 }
 
 let isAppReady = false;
@@ -496,17 +494,6 @@ async function createWindow() {
       "isFeatureEnabled",
       async (_, feature: string): Promise<boolean> => {
         return isFeatureEnabled(feature);
-      },
-    );
-
-    ipcMain.handle(
-      "trackEvent",
-      async (_, eventName: string, userAgent: string) => {
-        try {
-          trackEvent(eventName, userAgent, config.plausibleDomain);
-        } catch (error) {
-          throw new Error(packageExceptionForReport(error as Error));
-        }
       },
     );
 

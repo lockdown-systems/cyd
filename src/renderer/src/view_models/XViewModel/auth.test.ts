@@ -3,14 +3,12 @@ import * as Auth from "./auth";
 import type { XViewModel } from "./view_model";
 import { State } from "./types";
 import { URLChangedError } from "../BaseViewModel";
-import { PlausibleEvents } from "../../types";
 import { AutomationErrorType } from "../../automation_errors";
 import type { XUserInfo } from "../../types_x";
 import type { Account, XAccount } from "../../../../shared_types";
 import { createTestTranslator } from "../../test_util";
 
 interface MockElectron {
-  trackEvent: ReturnType<typeof vi.fn>;
   database: {
     saveAccount: ReturnType<typeof vi.fn>;
   };
@@ -26,7 +24,6 @@ describe("auth.ts", () => {
   beforeEach(() => {
     // Create mock Electron API
     mockElectron = {
-      trackEvent: vi.fn().mockResolvedValue(undefined),
       database: {
         saveAccount: vi.fn().mockResolvedValue(undefined),
       },
@@ -173,25 +170,6 @@ describe("auth.ts", () => {
 
       expect(mockVM.showAutomationNotice).toBe(true);
       expect(mockVM.sleep).toHaveBeenCalledWith(1000);
-    });
-
-    it("should track sign-in event for first-time login", async () => {
-      mockVM.state = State.Login;
-
-      await Auth.login(mockVM as XViewModel);
-
-      expect(mockElectron.trackEvent).toHaveBeenCalledWith(
-        PlausibleEvents.X_USER_SIGNED_IN,
-        navigator.userAgent,
-      );
-    });
-
-    it("should not track sign-in event if not in Login state", async () => {
-      mockVM.state = State.WizardStart;
-
-      await Auth.login(mockVM as XViewModel);
-
-      expect(mockElectron.trackEvent).not.toHaveBeenCalled();
     });
 
     it("should load home page if not already there", async () => {

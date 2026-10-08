@@ -401,9 +401,6 @@ export function mockElectronAPI() {
       removeAllListeners: vi.fn(),
     },
 
-    // Analytics (used by all view models)
-    trackEvent: vi.fn().mockResolvedValue(undefined),
-
     // Utility (used by all view models)
     shouldOpenDevtools: vi.fn().mockResolvedValue(false),
     getAPIURL: vi.fn().mockResolvedValue("https://api.test.com"),
@@ -486,7 +483,6 @@ export function spyOnElectronAPI() {
       getInfo: vi.spyOn(electron.archive, "getInfo"),
       savePage: vi.spyOn(electron.archive, "savePage"),
     },
-    trackEvent: vi.spyOn(electron, "trackEvent"),
   };
 }
 

@@ -1,5 +1,4 @@
 import type { FacebookViewModel } from "./view_model";
-import { PlausibleEvents } from "../../types";
 import { AutomationErrorType } from "../../automation_errors";
 import { formatError } from "../../util";
 import * as Helpers from "./helpers";
@@ -65,11 +64,6 @@ export async function login(vm: FacebookViewModel): Promise<boolean> {
   vm.log("login", "login succeeded");
   vm.showAutomationNotice = true;
 
-  await window.electron.trackEvent(
-    PlausibleEvents.FACEBOOK_USER_SIGNED_IN,
-    navigator.userAgent,
-  );
-
   return true;
 }
 
@@ -77,11 +71,6 @@ export async function runJobLogin(
   vm: FacebookViewModel,
   jobIndex: number,
 ): Promise<void> {
-  await window.electron.trackEvent(
-    PlausibleEvents.FACEBOOK_JOB_STARTED_LOGIN,
-    navigator.userAgent,
-  );
-
   vm.showBrowser = true;
   vm.instructions = vm.t("viewModels.facebook.auth.checkingLogin");
 
