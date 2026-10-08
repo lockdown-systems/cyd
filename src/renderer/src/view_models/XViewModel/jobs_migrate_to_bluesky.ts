@@ -1,5 +1,4 @@
 import type { XViewModel } from "./view_model";
-import { PlausibleEvents } from "../../types";
 import { XMigrateTweetCounts } from "../../../../shared_types";
 import { RunJobsState } from "./types";
 import * as Helpers from "./helpers";
@@ -9,11 +8,6 @@ export async function runJobMigrateBluesky(
   vm: XViewModel,
   jobIndex: number,
 ): Promise<boolean> {
-  await window.electron.trackEvent(
-    PlausibleEvents.X_JOB_STARTED_MIGRATE_BLUESKY,
-    navigator.userAgent,
-  );
-
   vm.showBrowser = false;
   vm.instructions = vm.t("viewModels.x.jobs.migrate.migrating");
   vm.showAutomationNotice = true;
@@ -84,11 +78,6 @@ export async function runJobMigrateBlueskyDelete(
   vm: XViewModel,
   jobIndex: number,
 ): Promise<boolean> {
-  await window.electron.trackEvent(
-    PlausibleEvents.X_JOB_STARTED_MIGRATE_BLUESKY_DELETE,
-    navigator.userAgent,
-  );
-
   vm.showBrowser = false;
   vm.instructions = vm.t("viewModels.x.jobs.migrate.deleting");
   vm.showAutomationNotice = true;

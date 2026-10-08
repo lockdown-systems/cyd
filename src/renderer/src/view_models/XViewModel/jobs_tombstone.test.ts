@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import * as TombstoneJobs from "./jobs_tombstone";
 import type { XViewModel } from "./view_model";
-import { PlausibleEvents } from "../../types";
 import { AutomationErrorType } from "../../automation_errors";
 import {
   mockElectronAPI,
@@ -69,10 +68,6 @@ describe("jobs_tombstone.ts", () => {
       const result = await TombstoneJobs.runJobTombstoneUpdateBanner(vm, 0);
 
       expect(result).toBe(true);
-      expect(window.electron.trackEvent).toHaveBeenCalledWith(
-        PlausibleEvents.X_JOB_STARTED_TOMBSTONE_UPDATE_BANNER,
-        navigator.userAgent,
-      );
       expect(vm.loadURLWithRateLimit).toHaveBeenCalledWith(
         "https://x.com/settings/profile",
       );

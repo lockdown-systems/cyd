@@ -1,7 +1,5 @@
 import type { XViewModel } from "./view_model";
-import { State } from "./types";
 import { URLChangedError } from "../BaseViewModel";
-import { PlausibleEvents } from "../../types";
 import { AutomationErrorType } from "../../automation_errors";
 import { formatError } from "../../util";
 import type { XUserInfo } from "../../types_x";
@@ -56,14 +54,6 @@ export async function login(vm: XViewModel): Promise<void> {
   vm.log("login", "login succeeded");
   vm.showAutomationNotice = true;
   await vm.sleep(1000);
-
-  // If this is the first time we're logging in, track it
-  if (vm.state === State.Login) {
-    await window.electron.trackEvent(
-      PlausibleEvents.X_USER_SIGNED_IN,
-      navigator.userAgent,
-    );
-  }
 
   await vm.waitForPause();
 

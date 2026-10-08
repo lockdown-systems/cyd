@@ -1,6 +1,5 @@
 import type { Emitter, EventType } from "mitt";
 import type { Account } from "../../../shared_types";
-import { PlausibleEvents } from "../types";
 import { AutomationErrorType } from "../automation_errors";
 import { logObj } from "../util";
 import { TranslatorFn, TranslatorParams, translate } from "../i18n/translator";
@@ -196,11 +195,6 @@ export class BaseViewModel {
     // Submit progress to the API. Only the X view listens, so this is the one
     // place the core is not platform-neutral yet.
     this.emitter?.emit(`x-submit-progress-${this.account?.id}`);
-
-    await window.electron.trackEvent(
-      PlausibleEvents.AUTOMATION_ERROR_OCCURED,
-      navigator.userAgent,
-    );
 
     // Get whatever the platform can say about the page it failed on
     const pageContext = await this.errorReportPageContext();

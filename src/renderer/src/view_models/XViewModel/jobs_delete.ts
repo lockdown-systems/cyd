@@ -1,5 +1,4 @@
 import type { XViewModel } from "./view_model";
-import { PlausibleEvents } from "../../types";
 import { AutomationErrorType } from "../../automation_errors";
 import { RunJobsState } from "./types";
 import {
@@ -20,11 +19,6 @@ export async function runJobDeleteTweets(
   vm: XViewModel,
   jobIndex: number,
 ): Promise<void> {
-  await window.electron.trackEvent(
-    PlausibleEvents.X_JOB_STARTED_DELETE_TWEETS,
-    navigator.userAgent,
-  );
-
   // After this job, we want to reload the user stats
   await window.electron.X.setConfig(vm.account.id, "reloadUserStats", "true");
 
@@ -117,11 +111,6 @@ export async function runJobDeleteRetweets(
   vm: XViewModel,
   jobIndex: number,
 ): Promise<void> {
-  await window.electron.trackEvent(
-    PlausibleEvents.X_JOB_STARTED_DELETE_RETWEETS,
-    navigator.userAgent,
-  );
-
   // After this job, we want to reload the user stats
   await window.electron.X.setConfig(vm.account.id, "reloadUserStats", "true");
 
@@ -222,11 +211,6 @@ export async function runJobDeleteLikes(
   vm: XViewModel,
   jobIndex: number,
 ): Promise<void> {
-  await window.electron.trackEvent(
-    PlausibleEvents.X_JOB_STARTED_DELETE_LIKES,
-    navigator.userAgent,
-  );
-
   // After this job, we want to reload the user stats
   await window.electron.X.setConfig(vm.account.id, "reloadUserStats", "true");
 
@@ -320,11 +304,6 @@ export async function runJobDeleteBookmarks(
   vm: XViewModel,
   jobIndex: number,
 ): Promise<void> {
-  await window.electron.trackEvent(
-    PlausibleEvents.X_JOB_STARTED_DELETE_BOOKMARKS,
-    navigator.userAgent,
-  );
-
   // After this job, we want to reload the user stats
   await window.electron.X.setConfig(vm.account.id, "reloadUserStats", "true");
 
@@ -416,11 +395,6 @@ export async function runJobUnfollowEveryone(
   vm: XViewModel,
   jobIndex: number,
 ): Promise<boolean> {
-  await window.electron.trackEvent(
-    PlausibleEvents.X_JOB_STARTED_UNFOLLOW_EVERYONE,
-    navigator.userAgent,
-  );
-
   let tries: number;
   let errorTriggered = false;
   let reloadFollowingPage = true;

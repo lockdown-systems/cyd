@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import * as IndexJobs from "./jobs_index";
 import type { XViewModel } from "./view_model";
-import { PlausibleEvents } from "../../types";
 import { TimeoutError, URLChangedError } from "../BaseViewModel";
 import { AutomationErrorType } from "../../automation_errors";
 import type { XArchiveStartResponse } from "../../../../shared_types";
@@ -62,19 +61,6 @@ describe("jobs_index.ts", () => {
         createMockJob("indexBookmarks"),
         createMockJob("archiveTweets"),
       ];
-    });
-
-    it("should track analytics event on start", async () => {
-      // Mock empty content to exit immediately after start
-      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(false);
-      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
-
-      await IndexJobs.runJobIndexTweets(vm, 0);
-
-      expect(mockElectron.trackEvent).toHaveBeenCalledWith(
-        PlausibleEvents.X_JOB_STARTED_INDEX_TWEETS,
-        navigator.userAgent,
-      );
     });
 
     it("should set correct UI state", async () => {
@@ -554,15 +540,6 @@ describe("jobs_index.ts", () => {
       ],
     };
 
-    it("should track analytics event on start", async () => {
-      await IndexJobs.runJobArchiveTweets(vm, 0);
-
-      expect(mockElectron.trackEvent).toHaveBeenCalledWith(
-        PlausibleEvents.X_JOB_STARTED_ARCHIVE_TWEETS,
-        navigator.userAgent,
-      );
-    });
-
     it("should get tweets to archive from electron API", async () => {
       await IndexJobs.runJobArchiveTweets(vm, 0);
 
@@ -600,19 +577,6 @@ describe("jobs_index.ts", () => {
         createMockJob("indexBookmarks"),
         createMockJob("archiveTweets"),
       ];
-    });
-
-    it("should track analytics event on start", async () => {
-      // Mock empty state to exit immediately
-      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
-      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
-
-      await IndexJobs.runJobIndexLikes(vm, 0);
-
-      expect(mockElectron.trackEvent).toHaveBeenCalledWith(
-        PlausibleEvents.X_JOB_STARTED_INDEX_LIKES,
-        navigator.userAgent,
-      );
     });
 
     it("should set correct UI state", async () => {
@@ -724,19 +688,6 @@ describe("jobs_index.ts", () => {
         createMockJob("indexBookmarks"),
         createMockJob("archiveTweets"),
       ];
-    });
-
-    it("should track analytics event on start", async () => {
-      // Mock empty state to exit immediately
-      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
-      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
-
-      await IndexJobs.runJobIndexBookmarks(vm, 0);
-
-      expect(mockElectron.trackEvent).toHaveBeenCalledWith(
-        PlausibleEvents.X_JOB_STARTED_INDEX_BOOKMARKS,
-        navigator.userAgent,
-      );
     });
 
     it("should set correct UI state", async () => {

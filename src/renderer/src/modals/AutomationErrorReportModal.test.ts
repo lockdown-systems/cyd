@@ -34,7 +34,6 @@ const mockGetConfig = vi.fn();
 const mockSetConfig = vi.fn();
 const mockShowQuestion = vi.fn();
 const mockShowError = vi.fn();
-const mockTrackEvent = vi.fn();
 
 // Create mock event emitter
 const mockEmit = vi.fn();
@@ -79,7 +78,6 @@ describe("AutomationErrorReportModal", () => {
       },
       showQuestion: mockShowQuestion,
       showError: mockShowError,
-      trackEvent: mockTrackEvent,
     };
 
     // Setup localStorage
@@ -429,7 +427,7 @@ describe("AutomationErrorReportModal", () => {
     expect(dontSubmitButton.text()).toContain("Don't Submit Report");
   });
 
-  it("should track event and emit hide when Don't Submit Report clicked", async () => {
+  it("should emit hide when Don't Submit Report clicked", async () => {
     wrapper = mount(AutomationErrorReportModal, {
       global: {
         plugins: [i18n],
