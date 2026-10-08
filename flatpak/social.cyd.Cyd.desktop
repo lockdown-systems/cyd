@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Cyd
+Comment=Backup, delete, and migrate your data from tech platforms
+Exec=cyd %U
+Icon=social.cyd.Cyd
+Terminal=false
+Type=Application
+Categories=Utility;Network;
+StartupWMClass=cyd
+MimeType=x-scheme-handler/social.cyd.api;
