@@ -181,6 +181,12 @@ export interface XAPILegacyTweet {
   id_str: string;
   extended_entities?: XAPILegacyEntities;
   quoted_status_permalink?: any;
+  // Present on a repost, and holding the post that was reposted
+  retweeted_status_result?: {
+    result?: {
+      rest_id?: string;
+    };
+  };
 }
 
 export interface XAPIUserCore {
@@ -189,91 +195,41 @@ export interface XAPIUserCore {
   screen_name: string;
 }
 
-export interface XAPILegacyUser {
-  default_profile: boolean;
-  default_profile_image: boolean;
-  description: string;
-  entities: any;
-  fast_followers_count: number;
-  favourites_count: number;
-  followers_count: number;
-  friends_count: number;
-  has_custom_timelines: boolean;
-  is_translator: boolean;
-  listed_count: number;
-  media_count: number;
-  needs_phone_verification: boolean;
-  normal_followers_count: number;
-  pinned_tweet_ids_str: any;
-  possibly_sensitive: boolean;
-  profile_banner_url: string;
-  profile_interstitial_type: string;
-  statuses_count: number;
-  translator_type: string;
-  verified?: boolean;
-  want_retweets: boolean;
-  withheld_in_countries: any;
+export interface XAPITimelineUser {
+  __typename?: string;
+  has_graduated_access?: boolean;
+  id?: string;
+  is_blue_verified?: boolean;
+  profile_image_shape?: string;
+  rest_id?: string;
+  tipjar_settings?: any;
+  affiliates_highlighted_label?: any;
+  avatar?: any;
+  dm_permissions?: any;
+  // A timeline user's fields are in `core`
+  core?: XAPIUserCore;
+}
+
+export interface XAPITweet {
+  __typename?: string; // "Tweet", "TweetWithVisibilityResults"
+  core?: {
+    user_results: {
+      result?: XAPITimelineUser;
+    };
+  };
+  legacy?: XAPILegacyTweet;
+  rest_id?: string;
+  is_translatable?: boolean;
+  source?: string;
+  edit_control?: any;
+  unmention_data?: any;
+  views?: any;
+  limitedActionResults?: any;
 }
 
 export interface XAPITweetResults {
-  result: {
-    __typename?: string; // "Tweet", "TweetWithVisibilityResults"
-    // __typename == "Tweet"
-    core?: {
-      user_results: {
-        result?: {
-          __typename?: string;
-          has_graduated_access?: boolean;
-          id?: string;
-          is_blue_verified?: boolean;
-          legacy: XAPILegacyUser;
-          profile_image_shape?: string;
-          rest_id?: string;
-          tipjar_settings?: any;
-          affiliates_highlighted_label?: any;
-          avatar?: any;
-          core: XAPIUserCore;
-          dm_permissions?: any;
-        };
-      };
-    };
-    // __typename == "TweetWithVisibilityResults"
-    tweet?: {
-      rest_id: string;
-      core: {
-        user_results: {
-          result?: {
-            __typename?: string;
-            has_graduated_access?: boolean;
-            id?: string;
-            is_blue_verified?: boolean;
-            legacy: XAPILegacyUser;
-            profile_image_shape?: string;
-            rest_id?: string;
-            tipjar_settings?: any;
-            affiliates_highlighted_label?: any;
-            avatar?: any;
-            core: XAPIUserCore;
-            dm_permissions?: any;
-          };
-        };
-      };
-      unmention_data?: any;
-      edit_control?: any;
-      is_translatable?: boolean;
-      views?: any;
-      source?: string;
-      legacy?: XAPILegacyTweet;
-      limitedActionResults?: any;
-    };
-    is_translatable?: boolean;
-    legacy?: XAPILegacyTweet;
-    rest_id?: string;
-    source?: string;
-    edit_control?: any;
-    unmention_data?: any;
-    views?: any;
-  };
+  // __typename == "TweetWithVisibilityResults" nests the post under `tweet`
+  result?: XAPITweet & { tweet?: XAPITweet };
 }
 
 export interface XAPIItemContent {
@@ -316,24 +272,27 @@ export interface XAPITimeline {
   };
 }
 
-export interface XAPIData {
-  errors?: [
-    {
-      message: string;
-      locations: {
-        line: number;
-        column: number;
-      }[];
-      path: string[];
-      extensions: any;
-      code: number;
-      kind: string;
-      name: string;
-      source: string;
-      retry_after: number;
-      tracing: any;
-    },
-  ];
+export interface XAPIErrorItem {
+  message?: string;
+  locations?: {
+    line: number;
+    column: number;
+  }[];
+  path?: string[];
+  extensions?: any;
+  code?: number;
+  kind?: string;
+  name?: string;
+  source?: string;
+  retry_after?: number;
+  tracing?: any;
+}
+
+export interface XAPIError {
+  errors?: XAPIErrorItem[];
+}
+
+export interface XAPIData extends XAPIError {
   data: {
     user: {
       result: {
@@ -355,7 +314,7 @@ export function isXAPIBookmarksData(body: any): body is XAPIBookmarksData {
   return !!(body.data && body.data.bookmark_timeline_v2);
 }
 
-export function isXAPIError(body: any): body is XAPIData {
+export function isXAPIError(body: any): body is XAPIError {
   return !!(body.errors && body.errors.length > 0);
 }
 
@@ -375,164 +334,6 @@ export function isXAPIData_v2(body: any): body is XAPIData {
     body.data.user.result &&
     body.data.user.result.timeline_v2
   );
-}
-
-// Index direct messages
-
-export interface XAPIConversationParticipant {
-  user_id: string;
-  last_read_event_id: string;
-}
-
-export interface XAPIConversation {
-  conversation_id: string;
-  type: string; // "ONE_TO_ONE", etc.
-  sort_event_id: string;
-  sort_timestamp: string;
-  participants: XAPIConversationParticipant[];
-  nsfw: boolean;
-  notifications_disabled: boolean;
-  mention_notifications_disabled: boolean;
-  last_read_event_id: string;
-  read_only: boolean;
-  trusted: boolean;
-  muted: boolean;
-  status: string; // "HAS_MORE", "AT_END"
-  min_entry_id: string;
-  max_entry_id: string;
-}
-
-export interface XAPIUser {
-  id: number;
-  id_str: string;
-  name: string;
-  screen_name: string;
-  location: any;
-  description: any;
-  url: any;
-  entities: any;
-  protected: boolean;
-  followers_count: number;
-  friends_count: number;
-  listed_count: number;
-  created_at: string;
-  favourites_count: number;
-  utc_offset: any;
-  time_zone: any;
-  geo_enabled: boolean;
-  verified: boolean;
-  statuses_count: number;
-  lang: any;
-  contributors_enabled: boolean;
-  is_translator: boolean;
-  is_translation_enabled: boolean;
-  profile_background_color: string | null;
-  profile_background_image_url: string | null;
-  profile_background_image_url_https: string | null;
-  profile_background_tile: boolean;
-  profile_image_url: string | null;
-  profile_image_url_https: string | null;
-  profile_banner_url: string | null;
-  profile_link_color: string | null;
-  profile_sidebar_border_color: string | null;
-  profile_sidebar_fill_color: string | null;
-  profile_text_color: string | null;
-  profile_use_background_image: boolean;
-  default_profile: boolean;
-  default_profile_image: boolean;
-  can_dm: any;
-  can_secret_dm: any;
-  can_media_tag: boolean;
-  following: boolean;
-  follow_request_sent: boolean;
-  notifications: boolean;
-  blocking: boolean;
-  subscribed_by: boolean;
-  blocked_by: boolean;
-  want_retweets: boolean;
-  business_profile_state: string;
-  translator_type: string;
-  withheld_in_countries: any;
-  followed_by: boolean;
-}
-
-export interface XAPIInboxTimeline {
-  inbox_timeline: {
-    status: string;
-    min_entry_id: string;
-    entries: any;
-    users: {
-      [key: string]: XAPIUser;
-    };
-    conversations: {
-      [key: string]: XAPIConversation;
-    };
-  };
-}
-
-export interface XAPIInboxInitialStateInboxTimeline {
-  status: string;
-  min_entry_id: string;
-}
-
-export interface XAPIInboxInitialState {
-  inbox_initial_state?: {
-    last_seen_event_id: string;
-    trusted_last_seen_event_id: string;
-    untrusted_last_seen_event_id: string;
-    cursor: string;
-    inbox_timelines: {
-      trusted?: XAPIInboxInitialStateInboxTimeline;
-      untrusted?: XAPIInboxInitialStateInboxTimeline;
-      untrusted_low_quality?: XAPIInboxInitialStateInboxTimeline;
-    };
-    entries: any;
-    users: {
-      [key: string]: XAPIUser;
-    };
-    conversations: {
-      [key: string]: XAPIConversation;
-    };
-    key_registry_state: any;
-  };
-
-  user_events: any;
-}
-
-export interface XAPIMessage {
-  message?: {
-    id: string;
-    time: string;
-    request_id: string;
-    conversation_id: string;
-    message_data: {
-      id: string;
-      time: string;
-      conversation_id?: string;
-      recipient_id?: string;
-      sender_id: string;
-      text: string;
-      edit_count?: number;
-      entities?: any;
-    };
-    message_reactions: any;
-  };
-  join_conversation?: any;
-}
-
-export interface XAPIConversationTimeline {
-  conversation_timeline: {
-    status: string;
-    min_entry_id: string;
-    max_entry_id: string;
-    entries?: XAPIMessage[];
-    users?: {
-      [key: string]: XAPIUser;
-    };
-    conversations?: {
-      [key: string]: XAPIConversation;
-    };
-  };
 }
 
 // Official X Archive types
@@ -596,25 +397,4 @@ export interface XArchiveLike {
 
 export interface XArchiveLikeContainer {
   like: XArchiveLike;
-}
-
-export interface XArchiveDMMessage {
-  participantsLeave?: any;
-  joinConversation?: any;
-  messageCreate?: {
-    reactions: any;
-    urls: any;
-    text: string;
-    mediaUrls: any;
-    senderId: string;
-    id: string;
-    createdAt: string;
-  };
-}
-
-export interface XArchiveDMConversation {
-  dmConversation: {
-    conversationId: string;
-    messages: XArchiveDMMessage[];
-  };
 }

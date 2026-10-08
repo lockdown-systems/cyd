@@ -97,7 +97,6 @@ describe("XAccountController - Stats", () => {
         likesDeleted: 1,
         bookmarksSaved: 2,
         bookmarksDeleted: 1,
-        conversationsDeleted: 6,
         accountsUnfollowed: 2,
         tweetsMigratedToBluesky: 1,
       });

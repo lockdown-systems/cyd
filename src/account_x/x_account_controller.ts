@@ -1,7 +1,6 @@
 import path from "path";
 
 import { session } from "electron";
-import type { OnSendHeadersListenerDetails } from "electron";
 import log from "electron-log/main";
 import Database from "better-sqlite3";
 
@@ -9,6 +8,7 @@ import { Agent } from "@atproto/api";
 import { Record as BskyPostRecord } from "@atproto/api/dist/client/types/app/bsky/feed/post";
 
 import { getAccountDataPath } from "../util";
+import { RequestLog } from "../request_log";
 import {
   XAccount,
   XJob,
@@ -18,7 +18,9 @@ import {
   XArchiveStartResponse,
   XRateLimitInfo,
   emptyXRateLimitInfo,
-  XIndexMessagesStartResponse,
+  XIndexTimelineStats,
+  emptyXIndexTimelineStats,
+  DEFAULT_X_RATE_LIMIT_SECONDS,
   XDeleteTweetsStartResponse,
   XProgressInfo,
   ResponseData,
@@ -43,9 +45,6 @@ import {
   XAPILegacyTweet,
   XAPILegacyTweetMedia,
   XAPIUserCore,
-  XAPIConversation,
-  XAPIMessage,
-  XAPIUser,
   XArchiveTweet,
 } from "./types";
 
@@ -68,12 +67,20 @@ export class XAccountController extends BaseAccountController<XProgress> {
   public account: XAccount | null = null;
   private rateLimitInfo: XRateLimitInfo = emptyXRateLimitInfo();
 
-  // Temp variable for accurately counting message progress
-  public messageIDsIndexed: string[] = [];
+  // What the last run of the parser saw. The index jobs use this to tell an
+  // empty account from a timeline Cyd could not read.
+  public timelineStats: XIndexTimelineStats = emptyXIndexTimelineStats();
 
-  protected cookies: Record<string, Record<string, string>> = {};
+  // The operation identifiers X's own client used this session, keyed by
+  // operation name. X rotates them whenever it redeploys and names the current
+  // one in every request it makes, so watching its traffic is how Cyd learns a
+  // rotation. In memory for this session only: no persistence, no
+  // invalidation.
+  private observedGraphqlQueryIDs: Record<string, string> = {};
 
   private blueskyService: BlueskyService | null = null;
+
+  private requestLog: RequestLog;
 
   constructor(accountID: number, mitmController: IMITMController) {
     super(accountID, mitmController);
@@ -82,33 +89,52 @@ export class XAccountController extends BaseAccountController<XProgress> {
 
     // Monitor web request metadata for X-specific functionality
     const ses = session.fromPartition(`persist:account-${this.accountID}`);
+
+    // Off unless CYD_REQUEST_LOG says otherwise. See src/request_log.ts.
+    this.requestLog = new RequestLog(this.accountID);
+    if (this.requestLog.enabled) {
+      log.info(
+        `XAccountController: recording requests for account ${this.accountID} to ${process.env.CYD_REQUEST_LOG}`,
+      );
+    }
+
     ses.webRequest.onCompleted((details) => {
+      this.requestLog.record({
+        method: details.method,
+        url: details.url,
+        statusCode: details.statusCode,
+        fromCache: details.fromCache,
+      });
+
+      // Learn the operation identifiers X is using right now
+      this.observeGraphqlOperation(details.url);
+
       // Monitor for rate limits
       if (details.statusCode == 429) {
-        this.rateLimitInfo.isRateLimited = true;
         if (details.responseHeaders) {
-          this.rateLimitInfo.rateLimitReset = Number(
-            details.responseHeaders["x-rate-limit-reset"],
+          this.markRateLimited(
+            Number(details.responseHeaders["x-rate-limit-reset"]),
           );
         } else {
-          // If we can't get it from the headers, set it to 15 minutes from now
-          this.rateLimitInfo.rateLimitReset =
-            Math.floor(Date.now() / 1000) + 900;
+          this.markRateLimited(
+            Math.floor(Date.now() / 1000) + DEFAULT_X_RATE_LIMIT_SECONDS,
+          );
         }
       }
-
-      // Monitor for deleting conversations
-      if (
-        details.url.startsWith("https://x.com/i/api/1.1/dm/conversation/") &&
-        details.url.endsWith("/delete.json") &&
-        details.method == "POST" &&
-        details.statusCode == 204
-      ) {
-        const urlParts = details.url.split("/");
-        const conversationID = urlParts[urlParts.length - 2];
-        Deletion.deleteDMsMarkDeleted(this, conversationID);
-      }
     });
+  }
+
+  // A GraphQL request names its operation identifier and then its operation:
+  // https://x.com/i/api/graphql/<identifier>/<operation>
+  private observeGraphqlOperation(url: string): void {
+    const match = /\/graphql\/([^/?]+)\/([^/?]+)/.exec(url);
+    if (match) {
+      this.observedGraphqlQueryIDs[match[2]] = match[1];
+    }
+  }
+
+  async getObservedGraphqlQueryIDs(): Promise<Record<string, string>> {
+    return this.observedGraphqlQueryIDs;
   }
 
   protected getAccountType(): string {
@@ -121,37 +147,14 @@ export class XAccountController extends BaseAccountController<XProgress> {
   }
 
   protected getAccountDataPath(): string {
-    if (!this.account) {
+    // A login that succeeds but never resolves the user leaves an account with
+    // no username. Returning "" hands callers the same empty path they already
+    // handle for a missing account, rather than throwing out of path.join.
+    if (!this.account?.username) {
       return "";
     }
     // Return the directory path (not the file path) since accountDataPath is also used for media directories
     return getAccountDataPath("X", this.account.username);
-  }
-
-  protected handleCookieTracking(details: OnSendHeadersListenerDetails): void {
-    // Keep track of cookies
-    // Wrap in try-catch because this runs in a webRequest callback (restricted context)
-    try {
-      if (details.requestHeaders) {
-        const hostname = new URL(details.url).hostname;
-        const cookieHeader = details.requestHeaders["Cookie"];
-        if (cookieHeader) {
-          const cookies = cookieHeader.split(";");
-          cookies.forEach((cookie: string) => {
-            const parts = cookie.split("=");
-            if (parts.length == 2) {
-              if (!this.cookies[hostname]) {
-                this.cookies[hostname] = {};
-              }
-              this.cookies[hostname][parts[0].trim()] = parts[1].trim();
-            }
-          });
-        }
-      }
-    } catch (error) {
-      // Silently log errors in webRequest callback to prevent crashes
-      log.error("XAccountController.handleCookieTracking error:", error);
-    }
   }
 
   refreshAccount() {
@@ -257,11 +260,7 @@ export class XAccountController extends BaseAccountController<XProgress> {
   }
 
   protected getMITMURLs(): string[] {
-    return [
-      "x.com/i/api/graphql",
-      "x.com/i/api/1.1/dm",
-      "x.com/i/api/2/notifications/all.json",
-    ];
+    return ["x.com/i/api/graphql"];
   }
 
   indexTweet(
@@ -292,24 +291,6 @@ export class XAccountController extends BaseAccountController<XProgress> {
     return Index.indexTweetURLs(this, tweetLegacy);
   }
 
-  async indexUser(user: XAPIUser): Promise<void> {
-    return Index.indexUser(this, user);
-  }
-
-  indexConversation(conversation: XAPIConversation): void {
-    return Index.indexConversation(this, conversation);
-  }
-
-  async indexParseConversationsResponseData(
-    responseIndex: number,
-  ): Promise<boolean> {
-    return Index.indexParseConversationsResponseData(this, responseIndex);
-  }
-
-  async indexParseConversations(): Promise<XProgress> {
-    return Index.indexParseConversations(this);
-  }
-
   async indexIsThereMore(): Promise<boolean> {
     return Index.indexIsThereMore(this);
   }
@@ -318,26 +299,12 @@ export class XAccountController extends BaseAccountController<XProgress> {
     return Index.resetThereIsMore(this);
   }
 
-  async indexMessagesStart(): Promise<XIndexMessagesStartResponse> {
-    return Index.indexMessagesStart(this);
+  async indexTimelineStats(): Promise<XIndexTimelineStats> {
+    return this.timelineStats;
   }
 
-  indexMessage(message: XAPIMessage): void {
-    return Index.indexMessage(this, message);
-  }
-
-  async indexParseMessagesResponseData(
-    responseIndex: number,
-  ): Promise<boolean> {
-    return Index.indexParseMessagesResponseData(this, responseIndex);
-  }
-
-  async indexParseMessages(): Promise<XProgress> {
-    return Index.indexParseMessages(this);
-  }
-
-  async indexConversationFinished(conversationID: string): Promise<void> {
-    return Index.indexConversationFinished(this, conversationID);
+  async resetIndexTimelineStats(): Promise<void> {
+    this.timelineStats = emptyXIndexTimelineStats();
   }
 
   // When you start archiving tweets you:
@@ -387,16 +354,15 @@ export class XAccountController extends BaseAccountController<XProgress> {
     return Deletion.deleteTweet(this, tweetID, deleteType);
   }
 
-  deleteDMsMarkDeleted(conversationID: string): void {
-    return Deletion.deleteDMsMarkDeleted(this, conversationID);
-  }
-
-  async deleteDMsMarkAllDeleted(): Promise<void> {
-    return Deletion.deleteDMsMarkAllDeleted(this);
-  }
-
   async resetRateLimitInfo(): Promise<void> {
     this.rateLimitInfo = emptyXRateLimitInfo();
+  }
+
+  // X reports a rate limit as an HTTP 429, and may also report one inside a
+  // response that otherwise looks successful.
+  markRateLimited(rateLimitReset: number): void {
+    this.rateLimitInfo.isRateLimited = true;
+    this.rateLimitInfo.rateLimitReset = rateLimitReset;
   }
 
   async isRateLimited(): Promise<XRateLimitInfo> {
@@ -466,14 +432,20 @@ export class XAccountController extends BaseAccountController<XProgress> {
     return XArchive.importXArchiveURLs(this, tweet);
   }
 
+  // Ask the session for the cookie rather than harvesting it from a request
+  // header. Chromium stopped exposing the Cookie header to webRequest in
+  // Electron 44, and the header was only ever visible after some request had
+  // already carried it -- which a freshly added account has not yet made.
   async getCookie(hostname: string, name: string): Promise<string | null> {
     log.debug(
       `XAccountController.getCookie: hostname=${hostname}, name=${name}`,
     );
-    if (!this.cookies[hostname]) {
-      return null;
-    }
-    return this.cookies[hostname][name] || null;
+    const ses = session.fromPartition(`persist:account-${this.accountID}`);
+    const cookies = await ses.cookies.get({
+      url: `https://${hostname}/`,
+      name,
+    });
+    return cookies[0]?.value ?? null;
   }
 
   async deleteConfig(key: string) {

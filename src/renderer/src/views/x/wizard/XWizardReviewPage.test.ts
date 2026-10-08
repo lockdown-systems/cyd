@@ -236,6 +236,40 @@ describe("XWizardReviewPage", () => {
       expect(warning.exists()).toBe(true);
       expect(warning.text()).toContain("might suspend your account");
     });
+
+    it("should put spaces between the counts and the text around them", async () => {
+      const { getJobsType } = await import("../../../util");
+      vi.mocked(getJobsType).mockReturnValue("delete");
+
+      const mockModel = createMockModel({
+        xAccount: {
+          deleteTweets: true,
+          deleteTweetsDaysOldEnabled: true,
+          deleteTweetsDaysOld: 2,
+          deleteRetweets: true,
+          deleteRetweetsDaysOldEnabled: true,
+          deleteRetweetsDaysOld: 30,
+        },
+      });
+
+      wrapper = mount(XWizardReviewPage, {
+        props: {
+          model: mockModel as XViewModel,
+        },
+        global: {
+          plugins: [i18n],
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const text = wrapper.text();
+      expect(text).toContain("10 tweets that are older than 2 days");
+      expect(text).toContain("5 retweets that are older than 30 days");
+      expect(text).toContain(
+        "of these tweets. If you care, archive your tweets",
+      );
+    });
   });
 
   describe("basic rendering - archive mode", () => {

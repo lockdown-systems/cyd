@@ -82,7 +82,9 @@ describe("XWizardArchiveOptionsPage", () => {
       expect(wrapper.text()).toContain("Archive options");
       expect(wrapper.text()).toContain("Save an HTML version of each tweet");
       expect(wrapper.text()).toContain("Save my bookmarks");
-      expect(wrapper.text()).toContain("Save my direct messages");
+      expect(wrapper.text()).toContain(
+        "X replaced direct messages with X Chat",
+      );
     });
 
     it("should render breadcrumbs with Dashboard and Local Database", async () => {

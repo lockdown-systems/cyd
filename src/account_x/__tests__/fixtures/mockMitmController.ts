@@ -3,6 +3,23 @@ import path from "path";
 import { TestMITMController } from "../../../__tests__/platform-fixtures/mitmControllerFactory";
 import type { ResponseData } from "../../../shared_types";
 
+// The routes X served these operations from on 2026-09-14, identifiers and all.
+export const USER_ORIGINALS_URL =
+  "/i/api/graphql/z_JDHIa1yBS42jLdUH1j3A/UserOriginalsTimeline?";
+export const USER_REPLIES_URL =
+  "/i/api/graphql/fTdkOgyI3EJPk0Qjlv8qUw/UserRepliesTimeline?";
+export const USER_REPOSTS_URL =
+  "/i/api/graphql/_ApdvtK9b54C7Q1LDtMxSA/UserRepostsTimeline?";
+export const LIKES_URL = "/i/api/graphql/o000A_Cp4JPOihhbeEgi0g/Likes?";
+export const BOOKMARKS_URL = "/i/api/graphql/tF6KOjmZM0WGcB2Q0mfwhw/Bookmarks?";
+
+function pages(prefix: string, count: number, url: string) {
+  return Array.from({ length: count }, (_, i) => ({
+    relativePath: path.join("x", `${prefix}_${i + 1}.json`),
+    url,
+  }));
+}
+
 export class XMockMITMController extends TestMITMController {
   constructor() {
     super();
@@ -38,31 +55,72 @@ export class XMockMITMController extends TestMITMController {
           },
         ]);
         break;
-      case "indexDMs":
-        this.responseData = this.loadResponseSequence([
-          {
-            relativePath: path.join("x", "XAPIDMInboxTimeline1.json"),
-            url: "/i/api/1.1/dm/inbox_timeline/trusted.json?filter_low_quality=false&include_quality=all&max_id=1737890608109486086&nsfw_filtering_enabled=false&include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&include_ext_is_blue_verified=1&include_ext_verified_type=1&include_ext_profile_image_shape=1&skip_status=1&dm_secret_conversations_enabled=false&krs_registration_enabled=true&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_ext_limited_action_results=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_ext_views=true&dm_users=false&include_groups=true&include_inbox_timelines=true&include_ext_media_color=true&supports_reactions=true&include_ext_edit_control=true&ext=mediaColor%2CaltText%2CbusinessAffiliationsLabel%2CmediaStats%2ChighlightedLabel%2CvoiceInfo%2CbirdwatchPivot%2CsuperFollowMetadata%2CunmentionInfo%2CeditControl%2Carticle",
-          },
-          {
-            relativePath: path.join("x", "XAPIDMInitialInboxState.json"),
-            url: "/i/api/1.1/dm/inbox_initial_state.json?nsfw_filtering_enabled=false&filter_low_quality=false&include_quality=all&include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&include_ext_is_blue_verified=1&include_ext_verified_type=1&include_ext_profile_image_shape=1&skip_status=1&dm_secret_conversations_enabled=false&krs_registration_enabled=true&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_ext_limited_action_results=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_ext_views=true&dm_users=true&include_groups=true&include_inbox_timelines=true&include_ext_media_color=true&supports_reactions=true&include_ext_edit_control=true&include_ext_business_affiliations_label=true&ext=mediaColor%2CaltText%2CmediaStats%2ChighlightedLabel%2CvoiceInfo%2CbirdwatchPivot%2CsuperFollowMetadata%2CunmentionInfo%2CeditControl%2Carticle",
-          },
-          {
-            relativePath: path.join("x", "XAPIDMConversation1.json"),
-            url: "/i/api/1.1/dm/conversation/96752784-1209344563589992448.json?context=FETCH_DM_CONVERSATION&include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&include_ext_is_blue_verified=1&include_ext_verified_type=1&include_ext_profile_image_shape=1&skip_status=1&dm_secret_conversations_enabled=false&krs_registration_enabled=true&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_ext_limited_action_results=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_ext_views=true&dm_users=false&include_groups=true&include_inbox_timelines=true&include_ext_media_color=true&supports_reactions=true&include_conversation_info=true&ext=mediaColor%2CaltText%2CmediaStats%2ChighlightedLabel%2CvoiceInfo%2CbirdwatchPivot%2CsuperFollowMetadata%2CunmentionInfo%2CeditControl%2Carticle",
-          },
-          {
-            relativePath: path.join("x", "XAPIDMConversation2.json"),
-            url: "/i/api/1.1/dm/conversation/96752784-1209344563589992448.json?context=FETCH_DM_CONVERSATION&include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&include_ext_is_blue_verified=1&include_ext_verified_type=1&include_ext_profile_image_shape=1&skip_status=1&dm_secret_conversations_enabled=false&krs_registration_enabled=true&cards_platform=Web-12&include_cards=1&include_ext_alt_text=true&include_ext_limited_action_results=true&include_quote_count=true&include_reply_count=1&tweet_mode=extended&include_ext_views=true&dm_users=false&include_groups=true&include_inbox_timelines=true&include_ext_media_color=true&supports_reactions=true&include_conversation_info=true&ext=mediaColor%2CaltText%2CmediaStats%2ChighlightedLabel%2CvoiceInfo%2CbirdwatchPivot%2CsuperFollowMetadata%2CunmentionInfo%2CeditControl%2Carticle",
-          },
-        ]);
-        break;
       case "indexBookmarks":
         this.responseData = this.loadResponseSequence([
           {
             relativePath: path.join("x", "XBookmarks.json"),
             url: "/i/api/graphql/Ds7FCVYEIivOKHsGcE84xQ/Bookmarks?",
+          },
+        ]);
+        break;
+      // The capture of 2026-09-14. X split UserTweetsAndReplies into three
+      // operations and moved the author fields into `core`; see
+      // docs/x-capture/findings-20260914.md.
+      case "indexPosts_20260914":
+        this.responseData = this.loadResponseSequence(
+          pages("XUserOriginalsTimeline_20260914", 4, USER_ORIGINALS_URL),
+        );
+        break;
+      case "indexReplies_20260914":
+        this.responseData = this.loadResponseSequence([
+          {
+            relativePath: path.join("x", "XUserRepliesTimeline_20260914.json"),
+            url: USER_REPLIES_URL,
+          },
+        ]);
+        break;
+      case "indexReposts_20260914":
+        this.responseData = this.loadResponseSequence([
+          {
+            relativePath: path.join("x", "XUserRepostsTimeline_20260914.json"),
+            url: USER_REPOSTS_URL,
+          },
+        ]);
+        break;
+      case "indexLikes_20260914":
+        this.responseData = this.loadResponseSequence(
+          pages("XLikes_20260914", 4, LIKES_URL),
+        );
+        break;
+      case "indexBookmarks_20260914":
+        this.responseData = this.loadResponseSequence(
+          pages("XBookmarks_20260914", 4, BOOKMARKS_URL),
+        );
+        break;
+      case "indexPostsEmpty_20260914":
+        this.responseData = this.loadResponseSequence([
+          {
+            relativePath: path.join(
+              "x",
+              "XUserOriginalsTimelineEmpty_20260914.json",
+            ),
+            url: USER_ORIGINALS_URL,
+          },
+        ]);
+        break;
+      case "indexLikesEmpty_20260914":
+        this.responseData = this.loadResponseSequence([
+          {
+            relativePath: path.join("x", "XLikesEmpty_20260914.json"),
+            url: LIKES_URL,
+          },
+        ]);
+        break;
+      case "indexBookmarksEmpty_20260914":
+        this.responseData = this.loadResponseSequence([
+          {
+            relativePath: path.join("x", "XBookmarksEmpty_20260914.json"),
+            url: BOOKMARKS_URL,
           },
         ]);
         break;

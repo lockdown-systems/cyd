@@ -85,72 +85,6 @@ onUnmounted(() => {
         </p>
       </template>
 
-      <!-- Index conversations -->
-      <template v-if="progress.currentJob == 'indexConversations'">
-        <p>
-          {{
-            t("progress.savedConversations", {
-              count: progress.conversationsIndexed.toLocaleString(),
-            })
-          }}
-          <XProgressErrorsOccuredComponent
-            :errors-occured="progress.errorsOccured"
-          />
-          <template v-if="progress.isIndexConversationsFinished">
-            {{ t("progress.savingComplete") }}
-          </template>
-        </p>
-      </template>
-
-      <!-- Index messages -->
-      <template v-if="progress.currentJob == 'indexMessages'">
-        <p v-if="progress.totalConversations">
-          {{
-            t("progress.savedMessages", {
-              messages: progress.messagesIndexed.toLocaleString(),
-              conversationsIndexed:
-                progress.conversationMessagesIndexed.toLocaleString(),
-              totalConversations: progress.totalConversations.toLocaleString(),
-            })
-          }}
-          <XProgressErrorsOccuredComponent
-            :errors-occured="progress.errorsOccured"
-          />
-          <template v-if="progress.isIndexMessagesFinished">
-            {{ t("progress.savingComplete") }}
-          </template>
-        </p>
-        <div
-          v-if="progress.totalConversations"
-          class="d-flex align-items-center justify-content-between"
-        >
-          <div class="progress flex-grow-1 me-2">
-            <div
-              class="progress-bar"
-              role="progressbar"
-              :style="{
-                width: `${(progress.conversationMessagesIndexed / progress.totalConversations) * 100}%`,
-              }"
-              :aria-valuenow="
-                (progress.conversationMessagesIndexed /
-                  progress.totalConversations) *
-                100
-              "
-              aria-valuemin="0"
-              aria-valuemax="100"
-            >
-              {{
-                Math.round(
-                  (progress.conversationMessagesIndexed /
-                    progress.totalConversations) *
-                    100,
-                )
-              }}%
-            </div>
-          </div>
-        </div>
-      </template>
-
       <!-- Index likes -->
       <template v-if="progress.currentJob == 'indexLikes'">
         <p>
@@ -399,23 +333,6 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
-      </template>
-
-      <!-- Delete DMs -->
-      <template v-if="progress.currentJob == 'deleteDMs'">
-        <p>
-          {{
-            t("progress.deletedConversations", {
-              count: progress.conversationsDeleted.toLocaleString(),
-            })
-          }}
-          <XProgressErrorsOccuredComponent
-            :errors-occured="progress.errorsOccured"
-          />
-          <template v-if="progress.isDeleteDMsFinished">
-            {{ t("progress.finishedDeletingDMs") }}
-          </template>
-        </p>
       </template>
 
       <!-- Unfollow everyone -->

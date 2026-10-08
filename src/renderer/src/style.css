@@ -419,7 +419,7 @@ h3 {
 
 .dashboard {
   width: 100%;
-  padding: 1rem 2rem;
+  padding: 0.75rem 2rem;
 }
 
 .dashboard .card {
@@ -456,10 +456,11 @@ h3 {
   background-color: #f8fafd;
 }
 
+/* Sized so two rows of cards clear the default 1000x900 window without scrolling */
 .dashboard .card .card-body img {
-  width: 96px !important;
-  height: 96px !important;
-  margin-bottom: 1rem;
+  width: 72px !important;
+  height: 72px !important;
+  margin-bottom: 0.75rem;
 }
 
 .dashboard .card p {

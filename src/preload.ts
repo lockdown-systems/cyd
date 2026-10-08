@@ -10,9 +10,9 @@ import {
   XJob,
   XProgress,
   XArchiveStartResponse,
-  XIndexMessagesStartResponse,
   XDeleteTweetsStartResponse,
   XRateLimitInfo,
+  XIndexTimelineStats,
   XProgressInfo,
   XDatabaseStats,
   XDeleteReviewStats,
@@ -274,38 +274,22 @@ const electronAPI = {
     indexParseTweets: (accountID: number): Promise<XProgress> => {
       return ipcRenderer.invoke("X:indexParseTweets", accountID);
     },
-    indexParseLikes: (accountID: number): Promise<XProgress> => {
-      return ipcRenderer.invoke("X:indexParseLikes", accountID);
-    },
-    indexParseBookmarks: (accountID: number): Promise<XProgress> => {
-      return ipcRenderer.invoke("X:indexParseBookmarks", accountID);
-    },
-    indexParseConversations: (accountID: number): Promise<XProgress> => {
-      return ipcRenderer.invoke("X:indexParseConversations", accountID);
-    },
     indexIsThereMore: (accountID: number): Promise<boolean> => {
       return ipcRenderer.invoke("X:indexIsThereMore", accountID);
     },
     resetThereIsMore: (accountID: number) => {
       ipcRenderer.invoke("X:resetThereIsMore", accountID);
     },
-    indexMessagesStart: (
+    getObservedGraphqlQueryIDs: (
       accountID: number,
-    ): Promise<XIndexMessagesStartResponse> => {
-      return ipcRenderer.invoke("X:indexMessagesStart", accountID);
+    ): Promise<Record<string, string>> => {
+      return ipcRenderer.invoke("X:getObservedGraphqlQueryIDs", accountID);
     },
-    indexParseMessages: (accountID: number): Promise<XProgress> => {
-      return ipcRenderer.invoke("X:indexParseMessages", accountID);
+    indexTimelineStats: (accountID: number): Promise<XIndexTimelineStats> => {
+      return ipcRenderer.invoke("X:indexTimelineStats", accountID);
     },
-    indexConversationFinished: (
-      accountID: number,
-      conversationID: string,
-    ): Promise<void> => {
-      return ipcRenderer.invoke(
-        "X:indexConversationFinished",
-        accountID,
-        conversationID,
-      );
+    resetIndexTimelineStats: (accountID: number): Promise<void> => {
+      return ipcRenderer.invoke("X:resetIndexTimelineStats", accountID);
     },
     archiveTweetsStart: (accountID: number): Promise<XArchiveStartResponse> => {
       return ipcRenderer.invoke("X:archiveTweetsStart", accountID);
@@ -395,12 +379,6 @@ const electronAPI = {
         tweetID,
         deleteType,
       );
-    },
-    deleteDMsMarkAllDeleted: (accountID: number): Promise<void> => {
-      return ipcRenderer.invoke("X:deleteDMsMarkAllDeleted", accountID);
-    },
-    deleteDMsScrollToBottom: (accountID: number): Promise<void> => {
-      return ipcRenderer.invoke("X:deleteDMsScrollToBottom", accountID);
     },
     unzipXArchive: (
       accountID: number,

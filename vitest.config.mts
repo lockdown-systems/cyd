@@ -1,0 +1,58 @@
+import { defineConfig } from "vitest/config";
+import { resolve } from "path";
+import vue from "@vitejs/plugin-vue";
+
+export default defineConfig({
+  plugins: [vue()],
+  resolve: {
+    alias: {
+      "/assets": resolve(import.meta.dirname, "src/renderer/public/assets"),
+    },
+  },
+  esbuild: {
+    target: "ES2020",
+  },
+  test: {
+    typecheck: {
+      enabled: true,
+      tsconfig: "./tsconfig.test.json",
+    },
+    environment: "jsdom",
+    include: [
+      "src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
+      "scripts/**/*.{test,spec}.ts",
+    ],
+    root: "./",
+    setupFiles: ["src/renderer/src/test-setup.ts"],
+    globalSetup: ["src/vitest-global-setup.ts"],
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.{js,ts,vue}"],
+      all: false,
+      clean: true,
+      skipFull: false,
+      reportOnFailure: true,
+      exclude: [
+        "coverage/**",
+        "dist/**",
+        ".vite/**",
+        "node_modules/**",
+        "**/*.d.ts",
+        "archive-static-sites/**",
+        "docs/**",
+        "scripts/**",
+        "build/**",
+        "assets/**",
+        "testdata/**",
+        "forge.config.ts",
+        "vite.*.config.mts",
+        "eslint.config.mjs",
+        "**/*.{test,spec}.{js,ts,tsx,vue}",
+        "**/test-setup.ts",
+        "**/test_util.ts",
+        "**/test_utils.ts",
+        "**/test_fixtures.ts",
+      ],
+    },
+  },
+});

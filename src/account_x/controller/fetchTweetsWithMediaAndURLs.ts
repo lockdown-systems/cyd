@@ -14,6 +14,7 @@ export function fetchTweetsWithMediaAndURLsFromDB(
   const query = `
             SELECT
                 t.tweetID, t.text, t.likeCount, t.retweetCount, t.createdAt,
+                t.retweetedTweetID,
                 tm.mediaType, tm.filename AS mediaFilename,
                 tu.expandedURL AS urlExpanded
             FROM tweet t
@@ -29,6 +30,7 @@ export function fetchTweetsWithMediaAndURLsFromDB(
     likeCount: number;
     retweetCount: number;
     createdAt: string;
+    retweetedTweetID: string | null;
     mediaType: string | null;
     mediaFilename: string | null;
     urlExpanded: string | null;
@@ -46,6 +48,7 @@ export function fetchTweetsWithMediaAndURLsFromDB(
         d: row.createdAt,
         i: [],
         v: [],
+        rt: row.retweetedTweetID ?? undefined,
       };
     }
 

@@ -175,9 +175,9 @@ onMounted(async () => {
           >
             <div class="card-body d-flex align-items-center">
               <div>
-                <div>{{ t("wizard.saveHTMLTweetsDMsBookmarks") }}</div>
+                <div>{{ t("wizard.saveHTMLTweetsBookmarks") }}</div>
                 <small class="info text-muted">
-                  {{ t("wizard.saveHTMLTweetsDMsBookmarksDescription") }}
+                  {{ t("wizard.saveHTMLTweetsBookmarksDescription") }}
                 </small>
               </div>
             </div>
@@ -240,9 +240,9 @@ onMounted(async () => {
           >
             <div class="card-body d-flex align-items-center">
               <div>
-                <div>{{ t("wizard.saveHTMLTweetsDMsBookmarks") }}</div>
+                <div>{{ t("wizard.saveHTMLTweetsBookmarks") }}</div>
                 <small class="info text-muted">
-                  {{ t("wizard.saveHTMLTweetsDMsBookmarksDescription") }}
+                  {{ t("wizard.saveHTMLTweetsBookmarksDescription") }}
                 </small>
               </div>
             </div>
@@ -303,9 +303,9 @@ onMounted(async () => {
           >
             <div class="card-body d-flex align-items-center">
               <div>
-                <div>{{ t("wizard.saveHTMLTweetsDMsBookmarks") }}</div>
+                <div>{{ t("wizard.saveHTMLTweetsBookmarks") }}</div>
                 <small class="info text-muted">
-                  {{ t("wizard.saveHTMLTweetsDMsBookmarksDescription") }}
+                  {{ t("wizard.saveHTMLTweetsBookmarksDescription") }}
                 </small>
               </div>
             </div>

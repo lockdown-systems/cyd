@@ -39,74 +39,68 @@ describe("helpers_shared.ts", () => {
     vi.clearAllMocks();
   });
 
-  describe("indexContentCheckIfEmpty", () => {
-    it("should return true and update progress when empty state selector exists", async () => {
-      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
+  describe("indexContentCheckOutcome", () => {
+    it("reports an account with nothing in it as empty", async () => {
+      mockElectron.X.indexTimelineStats.mockResolvedValue({
+        recognizedResponses: 1,
+        tweetEntries: 0,
+        tweetsSaved: 0,
+      });
 
-      const result = await IndexHelpers.indexContentCheckIfEmpty(
-        vm,
-        'div[data-testid="emptyState"]',
-        "article",
-        "isIndexTweetsFinished",
-        "tweetsIndexed",
-      );
-
-      expect(result).toBe(true);
-      expect(vm.progress.isIndexTweetsFinished).toBe(true);
-      expect(vm.progress.tweetsIndexed).toBe(0);
-      expect(vm.syncProgress).toHaveBeenCalled();
+      expect(await IndexHelpers.indexContentCheckOutcome(vm)).toBe("empty");
     });
 
-    it("should return true when section exists but no articles found", async () => {
-      vi.spyOn(vm, "doesSelectorExist")
-        .mockResolvedValueOnce(false) // No empty state
-        .mockResolvedValueOnce(true); // Section exists
-      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(0);
+    it("reports a timeline X never answered with as unreadable", async () => {
+      mockElectron.X.indexTimelineStats.mockResolvedValue({
+        recognizedResponses: 0,
+        tweetEntries: 0,
+        tweetsSaved: 0,
+      });
 
-      const result = await IndexHelpers.indexContentCheckIfEmpty(
-        vm,
-        'div[data-testid="emptyState"]',
-        "section article",
-        "isIndexLikesFinished",
-        "likesIndexed",
+      expect(await IndexHelpers.indexContentCheckOutcome(vm)).toBe(
+        "unreadable",
       );
-
-      expect(result).toBe(true);
-      expect(vm.progress.isIndexLikesFinished).toBe(true);
-      expect(vm.progress.likesIndexed).toBe(0);
     });
 
-    it("should return false when content exists", async () => {
-      vi.spyOn(vm, "doesSelectorExist").mockResolvedValue(true);
-      vi.spyOn(vm, "countSelectorsFound").mockResolvedValue(5);
+    it("reports tweets Cyd could not read as unreadable", async () => {
+      mockElectron.X.indexTimelineStats.mockResolvedValue({
+        recognizedResponses: 1,
+        tweetEntries: 20,
+        tweetsSaved: 0,
+      });
 
-      const result = await IndexHelpers.indexContentCheckIfEmpty(
-        vm,
-        null,
-        "section article",
-        "isIndexBookmarksFinished",
-        "bookmarksIndexed",
+      expect(await IndexHelpers.indexContentCheckOutcome(vm)).toBe(
+        "unreadable",
       );
+    });
 
-      expect(result).toBe(false);
+    it("reports saved tweets as saved", async () => {
+      mockElectron.X.indexTimelineStats.mockResolvedValue({
+        recognizedResponses: 3,
+        tweetEntries: 53,
+        tweetsSaved: 53,
+      });
+
+      expect(await IndexHelpers.indexContentCheckOutcome(vm)).toBe("saved");
     });
   });
 
   describe("indexContentWaitForInitialLoad", () => {
-    it("should return success when selector appears", async () => {
+    it("should report content that appears", async () => {
       vi.spyOn(vm, "waitForSelector").mockResolvedValue(undefined);
 
       const result = await IndexHelpers.indexContentWaitForInitialLoad(
         vm,
         "article",
-        "https://x.com/testuser/tweets",
-        "isIndexTweetsFinished",
-        "tweetsIndexed",
         AutomationErrorType.x_runJob_indexTweets_URLChanged,
         AutomationErrorType.x_runJob_indexTweets_OtherError,
       );
 
-      expect(result).toEqual({ success: true, errorTriggered: false });
+      expect(result).toEqual({
+        loaded: true,
+        errorTriggered: false,
+        rateLimited: false,
+      });
     });
 
     it("should handle rate limit timeout", async () => {
@@ -121,18 +115,19 @@ describe("helpers_shared.ts", () => {
       const result = await IndexHelpers.indexContentWaitForInitialLoad(
         vm,
         "article",
-        "https://x.com/testuser/likes",
-        "isIndexLikesFinished",
-        "likesIndexed",
         AutomationErrorType.x_runJob_indexLikes_URLChanged,
         AutomationErrorType.x_runJob_indexLikes_OtherError,
       );
 
-      expect(result).toEqual({ success: false, errorTriggered: false });
+      expect(result).toEqual({
+        loaded: false,
+        errorTriggered: false,
+        rateLimited: true,
+      });
       expect(vm.waitForRateLimit).toHaveBeenCalled();
     });
 
-    it("should set finished state when no content and not rate limited", async () => {
+    it("should report nothing loaded without deciding what it means", async () => {
       vi.spyOn(vm, "waitForSelector").mockRejectedValue(
         new TimeoutError("article"),
       );
@@ -144,16 +139,16 @@ describe("helpers_shared.ts", () => {
       const result = await IndexHelpers.indexContentWaitForInitialLoad(
         vm,
         "article",
-        "https://x.com/testuser/bookmarks",
-        "isIndexBookmarksFinished",
-        "bookmarksIndexed",
         AutomationErrorType.x_runJob_indexBookmarks_URLChanged,
         AutomationErrorType.x_runJob_indexBookmarks_OtherError,
       );
 
-      expect(result).toEqual({ success: false, errorTriggered: false });
-      expect(vm.progress.isIndexBookmarksFinished).toBe(true);
-      expect(vm.progress.bookmarksIndexed).toBe(0);
+      expect(result).toEqual({
+        loaded: false,
+        errorTriggered: false,
+        rateLimited: false,
+      });
+      expect(vm.progress.isIndexBookmarksFinished).toBe(false);
       expect(vm.waitForLoadingToFinish).toHaveBeenCalled();
     });
 
@@ -168,14 +163,15 @@ describe("helpers_shared.ts", () => {
       const result = await IndexHelpers.indexContentWaitForInitialLoad(
         vm,
         "article",
-        "https://x.com/testuser/tweets",
-        "isIndexTweetsFinished",
-        "tweetsIndexed",
         AutomationErrorType.x_runJob_indexTweets_URLChanged,
         AutomationErrorType.x_runJob_indexTweets_OtherError,
       );
 
-      expect(result).toEqual({ success: false, errorTriggered: true });
+      expect(result).toEqual({
+        loaded: false,
+        errorTriggered: true,
+        rateLimited: false,
+      });
       expect(vm.error).toHaveBeenCalledWith(
         AutomationErrorType.x_runJob_indexTweets_URLChanged,
         expect.objectContaining({ newURL: expect.any(String) }),
@@ -191,14 +187,15 @@ describe("helpers_shared.ts", () => {
       const result = await IndexHelpers.indexContentWaitForInitialLoad(
         vm,
         "article",
-        "https://x.com/testuser/tweets",
-        "isIndexTweetsFinished",
-        "tweetsIndexed",
         AutomationErrorType.x_runJob_indexTweets_URLChanged,
         AutomationErrorType.x_runJob_indexTweets_OtherError,
       );
 
-      expect(result).toEqual({ success: false, errorTriggered: true });
+      expect(result).toEqual({
+        loaded: false,
+        errorTriggered: true,
+        rateLimited: false,
+      });
       expect(vm.error).toHaveBeenCalledWith(
         AutomationErrorType.x_runJob_indexTweets_OtherError,
         expect.objectContaining({ error: expect.any(String) }),

@@ -8,14 +8,11 @@ export default tseslint.config(
   {
     ignores: [
       "eslint.config.ts",
-      "vitest.config.ts",
-      "vite.*.config.ts",
       ".vite/**/*",
       "build/**/*",
       "out/**/*",
       "coverage/**/*",
       "node_modules/**/*",
-      "src/renderer/vite.config.ts",
       "global.d.ts",
       "forge.env.d.ts",
       "docs/**/*",

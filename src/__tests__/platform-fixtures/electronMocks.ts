@@ -11,6 +11,8 @@ interface HandlerStore {
 interface SessionStoreValue {
   instance: Record<string, unknown>;
   handlers: HandlerStore;
+  // Keyed by "hostname\u0000name", mirroring what session.cookies.get matches on
+  cookieJar: Map<string, string>;
 }
 
 const handlerStore: Record<string, SessionStoreValue> = {};
@@ -61,7 +63,8 @@ const ensureTempDir = (): string => {
 
 const createSession = (partition: string): Record<string, unknown> => {
   const handlers = createHandlerStore();
-  handlerStore[partition] = { instance: {}, handlers };
+  const cookieJar = new Map<string, string>();
+  handlerStore[partition] = { instance: {}, handlers, cookieJar };
 
   const sessionInstance = {
     webRequest: {
@@ -78,6 +81,12 @@ const createSession = (partition: string): Record<string, unknown> => {
     fetch: vi.fn(async () => ({ status: 200 })),
     closeAllConnections: vi.fn(async () => Promise.resolve()),
     clearStorageData: vi.fn(async () => Promise.resolve()),
+    cookies: {
+      get: vi.fn(async ({ url, name }: { url: string; name: string }) => {
+        const value = cookieJar.get(`${new URL(url).hostname}\u0000${name}`);
+        return value === undefined ? [] : [{ name, value }];
+      }),
+    },
   } as Record<string, unknown>;
 
   handlerStore[partition].instance = sessionInstance;
@@ -125,6 +134,16 @@ export const electronMockHelpers = {
     );
   },
   getSessionMock: (partition: string) => handlerStore[partition]?.instance,
+  // Put a cookie in the session's jar without any request having carried it,
+  // which is the state a freshly added account is in.
+  seedCookie: (
+    partition: string,
+    hostname: string,
+    name: string,
+    value: string,
+  ) => {
+    handlerStore[partition]?.cookieJar.set(`${hostname}\u0000${name}`, value);
+  },
 };
 
 export const shellMock = shellMockImpl;

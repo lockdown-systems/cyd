@@ -1,6 +1,224 @@
 import type { XViewModel } from "./view_model";
 import { PlausibleEvents } from "../../types";
+import { AutomationErrorType } from "../../automation_errors";
 import { tombstoneUpdateBioCreditCydText } from "./types";
+import { TimeoutError } from "../automation_failures";
+
+const PROFILE_SETTINGS_URL = "https://x.com/settings/profile";
+
+// X's profile settings dialog carries three file inputs, all matching this.
+// The banner is the first of them, the header photo at the top of the dialog,
+// so it is reached by position among the matches rather than by the selector.
+const FILE_INPUT_SELECTOR = 'input[data-testid="fileInput"]';
+
+// The crop step X sometimes shows after a file is chosen
+const APPLY_BUTTON_SELECTOR = '[data-testid="applyButton"]';
+
+// Long enough for X to open its crop step, short enough that a delivery which
+// did not produce one can be made again without a long wait first.
+const CROP_STEP_TIMEOUT = 8000;
+
+// How many times to put the banner on the file input before giving up on X
+// offering a crop for it.
+const BANNER_DELIVERY_TRIES = 3;
+
+const SAVE_BUTTON_SELECTOR = 'button[data-testid="Profile_Save_Button"]';
+
+// The banner on the profile page, which is what says whether a save landed.
+const BANNER_IMAGE_SELECTOR = 'a[href$="/header_photo"] img';
+
+// How long to give the profile page to render its banner. An account with no
+// banner never renders one, so running this out is an answer rather than a
+// failure.
+const BANNER_RENDER_TIMEOUT = 10000;
+
+// The page draws the banner it already had and swaps the new one in a moment
+// later, so the banner is read until it turns over rather than sampled once.
+// Recorded on a real run, the swap landed 200ms after the first paint.
+const BANNER_CHANGE_TRIES = 30;
+const BANNER_POLL_INTERVAL = 500;
+
+const AUDIENCE_SETTINGS_URL = "https://x.com/settings/audience_and_tagging";
+
+// The "Protect your posts" box is the first checkbox on the audience settings
+// page
+const PROTECT_POSTS_SELECTOR = 'input[type="checkbox"]';
+
+const CONFIRM_BUTTON_SELECTOR =
+  'button[data-testid="confirmationSheetConfirm"]';
+
+const BIO_TEXTAREA_SELECTOR = 'div[role="dialog"] textarea';
+
+// Click Save.
+//
+// The button is never disabled: scripts/x-capture/probe-profile.ts found it
+// reads disabled=false with no aria-disabled before any change is made at all.
+// So its state says nothing about whether X has taken a change, and the only
+// way to know a save landed is to read the profile back.
+async function clickSaveProfile(
+  vm: XViewModel,
+  errorType: AutomationErrorType,
+): Promise<boolean> {
+  if (!(await vm.scriptClickElement(SAVE_BUTTON_SELECTOR))) {
+    vm.log("clickSaveProfile", "failed to click the save button");
+    await vm.error(errorType, { reason: "failed to click the save button" });
+    return false;
+  }
+
+  await vm.waitForLoadingToFinish();
+  await vm.sleep(3000);
+  return true;
+}
+
+/** The banner X serves on the profile, which is the only answer that counts. */
+/** The banner the page is showing at this instant. */
+async function readBannerSrc(vm: XViewModel): Promise<string> {
+  return (
+    (await vm.getWebview()?.executeJavaScript(`
+        (() => {
+            const image = document.querySelector('${BANNER_IMAGE_SELECTOR}');
+            return image ? image.src : "";
+        })();
+    `)) ?? ""
+  );
+}
+
+/**
+ * Opens the profile and waits for it to draw a banner at all.
+ *
+ * Returns false when it never draws one, which is what an account with no
+ * banner looks like and is an answer rather than a failure.
+ */
+async function openProfileWithBanner(vm: XViewModel): Promise<boolean> {
+  const profileURL = `https://x.com/${vm.account.xAccount?.username ?? ""}`;
+  await vm.loadURLWithRateLimit(profileURL);
+
+  // X renders the header photo after the page load finishes, so asking
+  // straight away gets nothing back and reads as "no banner". When both the
+  // before and the after read that way they match, and a banner that was in
+  // fact saved gets reported as one that never changed.
+  //
+  // A profile with no banner never grows this element, so running the timeout
+  // out is an answer, not a failure.
+  try {
+    await vm.waitForSelector(
+      BANNER_IMAGE_SELECTOR,
+      profileURL,
+      BANNER_RENDER_TIMEOUT,
+    );
+  } catch (error) {
+    if (!(error instanceof TimeoutError)) {
+      throw error;
+    }
+    vm.log("openProfileWithBanner", "the profile rendered no banner");
+    return false;
+  }
+  return true;
+}
+
+async function readBannerURL(vm: XViewModel): Promise<string> {
+  if (!(await openProfileWithBanner(vm))) {
+    return "";
+  }
+  return await readBannerSrc(vm);
+}
+
+/**
+ * Reads the banner back after a save, giving the page time to turn it over.
+ *
+ * The profile draws the banner it already had and replaces it a moment later,
+ * so asking once catches the old URL and reports a save that worked as one
+ * that changed nothing. Watching until it differs makes the answer the page
+ * settles on the one that counts, rather than whichever it happened to be
+ * showing when asked.
+ */
+async function readBannerURLAfterSave(
+  vm: XViewModel,
+  bannerBefore: string,
+): Promise<string> {
+  if (!(await openProfileWithBanner(vm))) {
+    return "";
+  }
+
+  let latest = "";
+  for (let attempt = 0; attempt < BANNER_CHANGE_TRIES; attempt++) {
+    latest = await readBannerSrc(vm);
+    if (latest !== bannerBefore) {
+      return latest;
+    }
+    await vm.sleep(BANNER_POLL_INTERVAL);
+  }
+  return latest;
+}
+
+/** The bio X serves back into the profile dialog. */
+async function readBioText(vm: XViewModel): Promise<string> {
+  await vm.loadURLWithRateLimit(PROFILE_SETTINGS_URL);
+  await vm.waitForSelector(BIO_TEXTAREA_SELECTOR, PROFILE_SETTINGS_URL);
+  return (
+    (await vm.getWebview()?.executeJavaScript(`
+        (() => {
+            const textarea = document.querySelector('${BIO_TEXTAREA_SELECTOR}');
+            return textarea ? textarea.value : "";
+        })();
+    `)) ?? ""
+  );
+}
+
+// Put the bio in the textarea through React's own value setter.
+//
+// Cyd used to type it in with sendInputEvent, a key at a time. Electron's
+// keyDown and keyUp move focus and press Backspace, which is why the tabbing
+// and deleting appeared to work, but they insert no text without a char event,
+// so the textarea kept whatever X had put there and the save wrote it straight
+// back. Assigning .value instead is no good either: React holds its own copy
+// of the value and saves that, not what the DOM shows.
+//
+// The setter plus an input event is what React listens for, and the probe
+// confirmed it survives a reload where a plain assignment does not.
+function setBioScript(bioText: string): string {
+  return `
+        (() => {
+            const textarea = document.querySelector('${BIO_TEXTAREA_SELECTOR}');
+            if(!textarea) { return false; }
+            const setter = Object.getOwnPropertyDescriptor(
+                HTMLTextAreaElement.prototype, 'value'
+            ).set;
+            setter.call(textarea, ${JSON.stringify(bioText)});
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            return true;
+        })();
+    `;
+}
+
+// Put the banner on the page's first file input, the way a person choosing a
+// file would. The input takes a File, not a data URL, so the image is decoded
+// in the page and handed over as one.
+//
+// The decoding is done by hand rather than by fetching the data URL: X's
+// content security policy has no data: in connect-src, so fetch() of one is
+// blocked, and all the page reports back is "Failed to fetch".
+function setBannerScript(bannerDataURL: string): string {
+  return `
+        (() => {
+            const input = document.querySelectorAll('${FILE_INPUT_SELECTOR}')[0];
+            if(!input) { return false; }
+            const base64 = '${bannerDataURL}'.split(',')[1];
+            if(!base64) { return false; }
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for(let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            const file = new File([bytes], 'banner.png', { type: 'image/png' });
+            const transfer = new DataTransfer();
+            transfer.items.add(file);
+            input.files = transfer.files;
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            return true;
+        })();
+    `;
+}
 
 export async function runJobTombstoneUpdateBanner(
   vm: XViewModel,
@@ -15,11 +233,106 @@ export async function runJobTombstoneUpdateBanner(
   vm.instructions = vm.t("viewModels.x.jobs.tombstone.updateBanner");
   vm.showAutomationNotice = true;
 
-  // Load the profile page
-  await vm.loadURLWithRateLimit("https://x.com/settings/profile");
+  const bannerDataURL = vm.account.xAccount?.tombstoneBannerDataURL ?? "";
+  if (!bannerDataURL) {
+    vm.log("runJobTombstoneUpdateBanner", "no banner image to set");
+    await vm.finishJob(jobIndex);
+    return true;
+  }
 
-  // TODO: implement
-  await vm.sleep(2000);
+  // What X shows now, to compare against once the save has been made
+  const bannerBefore = await readBannerURL(vm);
+
+  // Load the profile page
+  await vm.loadURLWithRateLimit(PROFILE_SETTINGS_URL);
+
+  // Put the banner on the file input, and wait for X to offer its crop.
+  //
+  // The crop is not decoration that X sometimes shows: Apply is what stages
+  // the uploaded image as the banner. Recorded from Cyd's own session, a
+  // delivery that draws no crop still uploads the file — INIT, APPEND and
+  // FINALIZE all succeed — and then update_profile_banner.json is never called
+  // at all, so Save writes the name and bio and leaves the banner alone.
+  //
+  // A delivery that draws no crop has therefore staged nothing, and is worth
+  // making again rather than carrying on from.
+  await vm.waitForSelector(FILE_INPUT_SELECTOR, PROFILE_SETTINGS_URL);
+
+  let cropOffered = false;
+  for (
+    let attempt = 0;
+    attempt < BANNER_DELIVERY_TRIES && !cropOffered;
+    attempt++
+  ) {
+    const wasSet = await vm
+      .getWebview()
+      ?.executeJavaScript(setBannerScript(bannerDataURL));
+    if (!wasSet) {
+      await vm.error(
+        AutomationErrorType.x_runJob_tombstoneUpdateBanner_FailedToSetBanner,
+        {},
+      );
+      return false;
+    }
+
+    try {
+      await vm.waitForSelector(
+        APPLY_BUTTON_SELECTOR,
+        PROFILE_SETTINGS_URL,
+        CROP_STEP_TIMEOUT,
+      );
+      cropOffered = true;
+    } catch (error) {
+      if (!(error instanceof TimeoutError)) {
+        throw error;
+      }
+      vm.log("runJobTombstoneUpdateBanner", [
+        "X offered no crop step, putting the banner on again",
+        attempt + 1,
+      ]);
+    }
+  }
+
+  if (!cropOffered) {
+    // Saving from here uploads the image, attaches nothing, and comes back
+    // reporting a banner that did not change, which explains none of it.
+    await vm.error(
+      AutomationErrorType.x_runJob_tombstoneUpdateBanner_FailedToSave,
+      { reason: "X never offered its crop step, so the banner was not staged" },
+    );
+    return false;
+  }
+
+  // The click goes through the element's own click(), because the dialog keeps
+  // a mask that swallows pointer events.
+  if (!(await vm.scriptClickElement(APPLY_BUTTON_SELECTOR))) {
+    await vm.error(
+      AutomationErrorType.x_runJob_tombstoneUpdateBanner_FailedToSave,
+      { reason: "failed to click the crop's apply button" },
+    );
+    return false;
+  }
+
+  if (
+    !(await clickSaveProfile(
+      vm,
+      AutomationErrorType.x_runJob_tombstoneUpdateBanner_FailedToSave,
+    ))
+  ) {
+    return false;
+  }
+
+  // Read the banner back. A save that clicked cleanly and changed nothing is
+  // exactly the failure this job kept reporting as success.
+  const bannerAfter = await readBannerURLAfterSave(vm, bannerBefore);
+  if (bannerAfter === bannerBefore) {
+    vm.log("runJobTombstoneUpdateBanner", ["banner unchanged", bannerBefore]);
+    await vm.error(
+      AutomationErrorType.x_runJob_tombstoneUpdateBanner_FailedToSave,
+      { reason: "the banner did not change", bannerBefore, bannerAfter },
+    );
+    return false;
+  }
 
   await vm.finishJob(jobIndex);
   return true;
@@ -38,81 +351,6 @@ export async function runJobTombstoneUpdateBio(
   vm.instructions = vm.t("viewModels.x.jobs.tombstone.updateBio");
   vm.showAutomationNotice = true;
 
-  // When submitting the profile form, it doesn't seem to get the bio text value from
-  // the <textarea>, so we need to instead inject input events into the webview.
-
-  // Load the profile page
-  await vm.loadURLWithRateLimit("https://x.com/settings/profile");
-
-  // Wait for bio field to appear
-  await vm.waitForSelector(
-    'div[role="dialog"] textarea',
-    "https://x.com/settings/profile",
-  );
-  await vm.sleep(200);
-
-  // Click in the modal
-  await vm.scriptClickElement('div[role="group"][tabindex="0"]');
-
-  // Press until the bio field is selected
-  vm.log("runJobTombstoneUpdateBio", "pressing tab to select bio field");
-  let selected = false;
-  for (let i = 0; i < 50; i++) {
-    // Press tab
-    await vm.getWebview()?.sendInputEvent({
-      type: "keyDown",
-      keyCode: "Tab",
-    });
-    await vm.sleep(10);
-    await vm.getWebview()?.sendInputEvent({
-      type: "keyUp",
-      keyCode: "Tab",
-    });
-    await vm.sleep(10);
-
-    // Check if the textarea is selected
-    const tagName = await vm
-      .getWebview()
-      ?.executeJavaScript(`document.activeElement.tagName`);
-    if (tagName == "TEXTAREA") {
-      vm.log("runJobTombstoneUpdateBio", "bio textarea selected");
-      selected = true;
-      break;
-    }
-  }
-  if (!selected) {
-    // TODO: error
-    console.error("runJobTombstoneUpdateBio", "bio textarea not found");
-  }
-
-  // Select and delete the existing bio
-  vm.log("runJobTombstoneUpdateBio", "select and delete the existing bio");
-  await vm.getWebview()?.executeJavaScript(`document.activeElement.click()`);
-  await vm.getWebview()?.sendInputEvent({
-    type: "keyDown",
-    keyCode: "CommandOrControl+A",
-  });
-  await vm.sleep(10);
-  await vm.getWebview()?.sendInputEvent({
-    type: "keyUp",
-    keyCode: "CommandOrControl+A",
-  });
-  await vm.sleep(10);
-  await vm.getWebview()?.sendInputEvent({
-    type: "keyDown",
-    keyCode: "Backspace",
-  });
-  await vm.sleep(10);
-  await vm.getWebview()?.sendInputEvent({
-    type: "keyUp",
-    keyCode: "Backspace",
-  });
-  await vm.sleep(10);
-
-  vm.pause();
-  await vm.waitForPause();
-
-  // Type the new bio character by character
   let bioText = vm.account.xAccount?.tombstoneUpdateBioText ?? "";
   if (vm.account.xAccount?.tombstoneUpdateBioCreditCyd) {
     bioText = bioText + tombstoneUpdateBioCreditCydText;
@@ -121,92 +359,56 @@ export async function runJobTombstoneUpdateBio(
     bioText = bioText.substring(0, 160);
   }
 
-  function getKeyEventForChar(char: string): { keyCode: string } {
-    // Lowercase letters
-    if (char >= "a" && char <= "z") {
-      return { keyCode: char.toUpperCase() }; // 'A' for 'a'
-    }
-    // Uppercase letters
-    if (char >= "A" && char <= "Z") {
-      return { keyCode: `Shift+${char}` }; // 'Shift+A' for 'A'
-    }
-    // Numbers
-    if (char >= "0" && char <= "9") {
-      return { keyCode: char };
-    }
-    // Space
-    if (char === " ") return { keyCode: "Space" };
+  // Load the profile page and wait for the bio field
+  await vm.loadURLWithRateLimit(PROFILE_SETTINGS_URL);
+  await vm.waitForSelector(BIO_TEXTAREA_SELECTOR, PROFILE_SETTINGS_URL);
 
-    // Shifted symbols
-    const shiftSymbols: Record<string, string> = {
-      "!": "Shift+1",
-      "@": "Shift+2",
-      "#": "Shift+3",
-      $: "Shift+4",
-      "%": "Shift+5",
-      "^": "Shift+6",
-      "&": "Shift+7",
-      "*": "Shift+8",
-      "(": "Shift+9",
-      ")": "Shift+0",
-      _: "Shift+-",
-      "+": "Shift+=",
-      ":": "Shift+;",
-      '"': "Shift+'",
-      "<": "Shift+,",
-      ">": "Shift+.",
-      "?": "Shift+/",
-      "|": "Shift+\\",
-      "~": "Shift+`",
-      "{": "Shift+[",
-      "}": "Shift+]",
-    };
-    if (char in shiftSymbols) {
-      return { keyCode: shiftSymbols[char] };
-    }
-
-    // Direct mapping for some symbols (no shift)
-    const directMap: Record<string, string> = {
-      "-": "-",
-      "=": "=",
-      "[": "[",
-      "]": "]",
-      "\\": "\\",
-      ";": ";",
-      "'": "'",
-      ",": ",",
-      ".": ".",
-      "/": "/",
-      "`": "`",
-    };
-    if (char in directMap) {
-      return { keyCode: directMap[char] };
-    }
-
-    // Fallback
-    return { keyCode: char };
+  const wasSet = await vm
+    .getWebview()
+    ?.executeJavaScript(setBioScript(bioText));
+  if (!wasSet) {
+    await vm.error(
+      AutomationErrorType.x_runJob_tombstoneUpdateBio_FailedToSave,
+      {
+        reason: "could not find the bio textarea",
+      },
+    );
+    return false;
   }
 
-  for (const char of bioText) {
-    vm.log("runJobTombstoneUpdateBio", ["typing char", char]);
-    const { keyCode } = getKeyEventForChar(char);
-    const webview = vm.getWebview();
-    await webview?.sendInputEvent({ type: "keyDown", keyCode });
-    await vm.sleep(10);
-    await webview?.sendInputEvent({ type: "keyUp", keyCode });
-    await vm.sleep(10);
+  if (
+    !(await clickSaveProfile(
+      vm,
+      AutomationErrorType.x_runJob_tombstoneUpdateBio_FailedToSave,
+    ))
+  ) {
+    return false;
   }
 
-  vm.pause();
-  await vm.waitForPause();
+  // Read the bio back, because a save that clicked cleanly and changed nothing
+  // is exactly the failure this job kept reporting as success.
+  const savedBio = await readBioText(vm);
+  if (savedBio !== bioText) {
+    vm.log("runJobTombstoneUpdateBio", ["bio unchanged", savedBio]);
+    await vm.error(
+      AutomationErrorType.x_runJob_tombstoneUpdateBio_FailedToSave,
+      {
+        reason: "the bio did not change",
+        wanted: bioText,
+        got: savedBio,
+      },
+    );
+    return false;
+  }
 
-  // Click save
-  await vm.scriptClickElement('button[data-testid="Profile_Save_Button"]');
-  await vm.sleep(200);
-  await vm.waitForLoadingToFinish();
-
-  vm.pause();
-  await vm.waitForPause();
+  // Cyd's saved copy of the bio is written at login and nowhere else, and the
+  // tombstone page pre-fills from it. Left stale, that page comes back
+  // offering the bio this job just replaced. The value read back off X is the
+  // one worth keeping, since it is what X actually holds.
+  if (vm.account.xAccount) {
+    vm.account.xAccount.bio = savedBio;
+    await window.electron.database.saveAccount(JSON.stringify(vm.account));
+  }
 
   await vm.finishJob(jobIndex);
   return true;
@@ -226,36 +428,53 @@ export async function runJobTombstoneLockAccount(
   vm.showAutomationNotice = true;
 
   // Load the audience, media and tagging settings page
-  await vm.loadURLWithRateLimit("https://x.com/settings/audience_and_tagging");
+  await vm.loadURLWithRateLimit(AUDIENCE_SETTINGS_URL);
 
-  // Is the "Protect your tweets" box already checked?
-  if (
-    await vm.getWebview()
-      ?.executeJavaScript(`document.querySelectorAll('input[type="checkbox"]')[0].checked
-`)
-  ) {
+  // X renders the settings after the page loads, so wait for the checkbox
+  // rather than reaching into a list that is still empty
+  await vm.waitForSelector(PROTECT_POSTS_SELECTOR, AUDIENCE_SETTINGS_URL);
+
+  // Is the "Protect your posts" box already checked?
+  const isLocked = await vm.getWebview()?.executeJavaScript(`
+        (() => {
+            const box = document.querySelectorAll('${PROTECT_POSTS_SELECTOR}')[0];
+            return box ? box.checked : false;
+        })();
+    `);
+
+  if (isLocked) {
     vm.log("runJobTombstoneLockAccount", "account is already locked");
+    await vm.finishJob(jobIndex);
+    return true;
   }
-  // Check the "Protect your tweets" box
-  else {
-    vm.log("runJobTombstoneLockAccount", "checking the account lock checkbox");
-    await vm
-      .getWebview()
-      ?.executeJavaScript(
-        `document.querySelectorAll('input[type="checkbox"]')[0].click()`,
-      );
-    await vm.sleep(200);
-    await vm.waitForSelector(
-      'button[data-testid="confirmationSheetConfirm"]',
-      "https://x.com/settings/audience_and_tagging",
+
+  // Check the "Protect your posts" box
+  vm.log("runJobTombstoneLockAccount", "checking the account lock checkbox");
+  const wasClicked = await vm.getWebview()?.executeJavaScript(`
+        (() => {
+            const box = document.querySelectorAll('${PROTECT_POSTS_SELECTOR}')[0];
+            if(!box) { return false; }
+            box.click();
+            return true;
+        })();
+    `);
+  if (!wasClicked) {
+    await vm.error(
+      AutomationErrorType.x_runJob_tombstoneLockAccount_FailedToLock,
+      { reason: "failed to click the protect your posts checkbox" },
     );
-    await vm.sleep(200);
-    await vm.scriptClickElement(
-      'button[data-testid="confirmationSheetConfirm"]',
-    );
-    await vm.sleep(200);
-    await vm.waitForLoadingToFinish();
+    return false;
   }
+
+  await vm.waitForSelector(CONFIRM_BUTTON_SELECTOR, AUDIENCE_SETTINGS_URL);
+  if (!(await vm.scriptClickElement(CONFIRM_BUTTON_SELECTOR))) {
+    await vm.error(
+      AutomationErrorType.x_runJob_tombstoneLockAccount_FailedToLock,
+      { reason: "failed to click the confirm button" },
+    );
+    return false;
+  }
+  await vm.waitForLoadingToFinish();
 
   await vm.finishJob(jobIndex);
   return true;

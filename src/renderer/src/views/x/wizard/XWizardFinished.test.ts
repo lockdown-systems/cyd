@@ -51,13 +51,10 @@ describe("XWizardFinished", () => {
       likesIndexed: 0,
       bookmarksIndexed: 0,
       unknownIndexed: 0,
-      conversationsIndexed: 0,
-      messagesIndexed: 0,
       tweetsDeleted: 0,
       retweetsDeleted: 0,
       likesDeleted: 0,
       bookmarksDeleted: 0,
-      conversationsDeleted: 0,
       accountsUnfollowed: 0,
       migrateTweetsCount: 0,
       migrateSkippedTweetsCount: 0,
@@ -236,6 +233,85 @@ describe("XWizardFinished", () => {
 
       expect(wrapper.text()).toContain("789");
       expect(wrapper.text()).toContain("accounts");
+    });
+  });
+
+  describe("basic rendering - tombstone mode", () => {
+    it("should render finished page for tombstone mode", async () => {
+      const { getJobsType } = await import("../../../util");
+      (getJobsType as ReturnType<typeof vi.fn>).mockReturnValue("tombstone");
+
+      const mockModel = createMockModel(
+        {
+          xAccount: {
+            tombstoneUpdateBanner: true,
+            tombstoneUpdateBio: true,
+            tombstoneLockAccount: true,
+          },
+        },
+        {},
+      );
+
+      wrapper = mount(XWizardFinished, {
+        props: {
+          model: mockModel as XViewModel,
+          failureStateIndexTweets_FailedToRetryAfterRateLimit: false,
+          failureStateIndexLikes_FailedToRetryAfterRateLimit: false,
+        },
+        global: {
+          plugins: [i18n],
+          config: {
+            globalProperties: {
+              emitter: mockEmitter,
+            } as Record<string, unknown>,
+          },
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      expect(wrapper.text()).toContain("You just tombstoned your account:");
+      expect(wrapper.text()).toContain("Updated your banner");
+      expect(wrapper.text()).toContain("Updated your bio");
+      expect(wrapper.text()).toContain("Locked your account");
+    });
+
+    it("should list only the tombstone actions that were turned on", async () => {
+      const { getJobsType } = await import("../../../util");
+      (getJobsType as ReturnType<typeof vi.fn>).mockReturnValue("tombstone");
+
+      const mockModel = createMockModel(
+        {
+          xAccount: {
+            tombstoneUpdateBanner: false,
+            tombstoneUpdateBio: true,
+            tombstoneLockAccount: false,
+          },
+        },
+        {},
+      );
+
+      wrapper = mount(XWizardFinished, {
+        props: {
+          model: mockModel as XViewModel,
+          failureStateIndexTweets_FailedToRetryAfterRateLimit: false,
+          failureStateIndexLikes_FailedToRetryAfterRateLimit: false,
+        },
+        global: {
+          plugins: [i18n],
+          config: {
+            globalProperties: {
+              emitter: mockEmitter,
+            } as Record<string, unknown>,
+          },
+        },
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      expect(wrapper.text()).toContain("Updated your bio");
+      expect(wrapper.text()).not.toContain("Updated your banner");
+      expect(wrapper.text()).not.toContain("Locked your account");
     });
   });
 

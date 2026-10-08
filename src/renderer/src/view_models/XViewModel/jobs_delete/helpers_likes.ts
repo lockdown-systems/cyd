@@ -1,4 +1,5 @@
 import type { XViewModel } from "../view_model";
+import { sendXDeleteMutation } from "./operations";
 
 /**
  * Delete a single like (unfavorite) via GraphQL API
@@ -8,19 +9,10 @@ export async function deleteLikeItem(
   vm: XViewModel,
   ct0: string,
   tweetId: string,
-  username: string,
 ): Promise<number> {
-  return await vm.graphqlDelete(
-    ct0,
-    "https://x.com/i/api/graphql/ZYKSe-w7KEslx3JhSIk5LA/UnfavoriteTweet",
-    `https://x.com/${username}/likes`,
-    JSON.stringify({
-      variables: {
-        tweet_id: tweetId,
-      },
-      queryId: "ZYKSe-w7KEslx3JhSIk5LA",
-    }),
-  );
+  return await sendXDeleteMutation(vm, ct0, "UnfavoriteTweet", {
+    tweet_id: tweetId,
+  });
 }
 
 /**
@@ -32,15 +24,7 @@ export async function deleteBookmarkItem(
   ct0: string,
   tweetId: string,
 ): Promise<number> {
-  return await vm.graphqlDelete(
-    ct0,
-    "https://x.com/i/api/graphql/Wlmlj2-xzyS1GN3a6cj-mQ/DeleteBookmark",
-    "https://x.com/i/bookmarks",
-    JSON.stringify({
-      variables: {
-        tweet_id: tweetId,
-      },
-      queryId: "Wlmlj2-xzyS1GN3a6cj-mQ",
-    }),
-  );
+  return await sendXDeleteMutation(vm, ct0, "DeleteBookmark", {
+    tweet_id: tweetId,
+  });
 }

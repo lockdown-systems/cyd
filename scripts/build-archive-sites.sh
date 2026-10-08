@@ -6,7 +6,6 @@ cd "$(dirname "$0")/.."
 build_archive_site() {
     site=$1
     echo ">> Building ${site} archive static site..."
-    rm -f archive-static-sites/${site}-archive/public/assets/archive.js
     rm -r archive-static-sites/${site}-archive/dist || true
     npm run build --workspace=archive-static-sites/${site}-archive
 

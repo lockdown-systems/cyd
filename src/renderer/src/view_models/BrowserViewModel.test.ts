@@ -400,3 +400,48 @@ describe("BrowserViewModel", () => {
     });
   });
 });
+
+describe("BrowserViewModel loadURL settling", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockElectronAPI();
+  });
+
+  // loadURL sleeps after a navigation on purpose: script run too soon after a
+  // page load races the single-page app's own next navigation, which hangs
+  // executeJavaScript and has crashed the browser process. The sleep was
+  // called without await, so the pause never happened and loadURL returned
+  // straight into that window.
+  it("does not resolve until the post-navigation sleep has finished", async () => {
+    const vm = createMockBrowserViewModel();
+    const mockWebview = vm.getWebview()!;
+    vi.mocked(mockWebview.loadURL).mockResolvedValue(undefined);
+    vi.spyOn(vm, "waitForLoadingToFinish").mockResolvedValue(undefined);
+
+    let releaseSleep: () => void = () => {};
+    const sleepStarted = new Promise<void>((sleepIsRunning) => {
+      vi.spyOn(vm, "sleep").mockImplementation(() => {
+        sleepIsRunning();
+        return new Promise<void>((resolve) => {
+          releaseSleep = resolve;
+        });
+      });
+    });
+
+    let resolved = false;
+    const loading = vm.loadURL("https://x.com/home").then(() => {
+      resolved = true;
+    });
+
+    await sleepStarted;
+    // A macrotask, not a microtask: without it the promise chain has not had a
+    // chance to settle and the assertion passes whether or not the sleep is
+    // awaited.
+    await new Promise((flushed) => setTimeout(flushed, 0));
+    expect(resolved).toBe(false);
+
+    releaseSleep();
+    await loading;
+    expect(resolved).toBe(true);
+  });
+});
