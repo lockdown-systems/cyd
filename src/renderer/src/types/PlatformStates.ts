@@ -148,4 +148,16 @@ export const PlatformStates = {
 
   /** Bluesky: Display connect an identity wizard page */
   BlueskyWizardConnectDisplay: "BlueskyWizardConnectDisplay",
+
+  /** Bluesky: Choose what to save wizard page */
+  BlueskyWizardSave: "BlueskyWizardSave",
+
+  /** Bluesky: Display choose what to save wizard page */
+  BlueskyWizardSaveDisplay: "BlueskyWizardSaveDisplay",
+
+  /** Bluesky: Browse saved data wizard page */
+  BlueskyWizardBrowse: "BlueskyWizardBrowse",
+
+  /** Bluesky: Display browse saved data wizard page */
+  BlueskyWizardBrowseDisplay: "BlueskyWizardBrowseDisplay",
 } as const;

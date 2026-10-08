@@ -43,7 +43,10 @@
     "savePostsHTML": "Saving posts HTML",
     "deleteWallPosts": "Removing wall posts",
     "deleteActivity": "Deleting Facebook data",
-    "restoreUserLang": "Restoring language"
+    "restoreUserLang": "Restoring language",
+    "saveReposts": "Saving reposts",
+    "saveLikes": "Saving likes and their posts",
+    "saveBookmarks": "Saving bookmarks"
   },
   "progress": {
     "savingComplete": "Saving complete!",
@@ -467,16 +470,20 @@
   "bluesky": {
     "dashboard": {
       "noIdentity": "No Bluesky identity is linked to this account yet, and Cyd hasn't saved any Bluesky data for it.",
-      "comingSoon": "Coming soon",
       "connectTitle": "Connect to Bluesky",
       "connectDescription": "Authorize Cyd to act on your Bluesky identity so it can save and manage your data.",
       "saveTitle": "Save My Data",
-      "saveDescription": "Save your Bluesky posts, media, and conversations to this computer.",
+      "saveDescription": "Save your Bluesky posts, reposts, likes, bookmarks, and all their media to this computer.",
       "browseTitle": "Browse My Data",
       "browseDescription": "Read your Bluesky saved data inside Cyd, with no Bluesky connection and no network access.",
       "connectedTitle": "Bluesky Connection",
       "connectedDescription": "Cyd is authorized to act on your Bluesky identity. Review or remove that authorization.",
-      "notConnected": "Cyd isn't authorized to act on this Bluesky identity right now. Your saved data is still here, and connecting again doesn't change it."
+      "notConnected": "Cyd isn't authorized to act on this Bluesky identity right now. Your saved data is still here, and connecting again doesn't change it.",
+      "savedRecords": "{count} records saved",
+      "incomplete": "Some media is still missing. Saving again retries it.",
+      "connectFirst": "Connect your Bluesky account first, and Cyd can start saving it.",
+      "unfinishedSave": "A save was interrupted. Cyd can carry on from where it stopped.",
+      "resumeSave": "Carry on saving"
     },
     "connect": {
       "title": "Connect to Bluesky",
@@ -493,6 +500,66 @@
       "connectedTo": "Cyd is connected to:",
       "disconnect": "Disconnect",
       "disconnectKeepsData": "Disconnecting removes Cyd's authorization. Your Bluesky account in Cyd and everything Cyd has saved for it stay exactly as they are. If you also migrate to this identity from an X account, that stays connected too."
+    },
+    "save": {
+      "title": "Save My Data",
+      "backToDashboard": "Back to dashboard",
+      "description": "Choose what Cyd saves. Each kind of data is saved separately, and turning one off later never deletes what Cyd already has.",
+      "categories": {
+        "posts": "Posts",
+        "postsDescription": "Everything you posted, with its images and videos at full quality.",
+        "reposts": "Reposts",
+        "repostsDescription": "What you reposted, and the posts themselves.",
+        "likes": "Likes",
+        "likesDescription": "What you liked, and the posts themselves, videos included.",
+        "bookmarks": "Bookmarks",
+        "bookmarksDescription": "What you bookmarked, and the posts themselves."
+      },
+      "storage": {
+        "title": "Room on this computer",
+        "estimated": "Estimated need: about {estimated}",
+        "certain": "Certain to need at least: {certain}",
+        "available": "Free space: {available}",
+        "uncertain": "Bluesky doesn't publish a count for everything you asked for, so this is an estimate. Cyd checks again as it goes.",
+        "insufficient": "There isn't enough room on this computer for even the part Cyd is certain about. Free up space and try again.",
+        "unknownCount": "Bluesky publishes no count for {category}.",
+        "recordCount": "{category}: about {count} records"
+      },
+      "nothingChosen": "Choose at least one kind of data to save.",
+      "start": "Start saving"
+    },
+    "progress": {
+      "stageListing": "Reading your {category} from Bluesky",
+      "stageMedia": "Saving media for your {category}",
+      "stageDone": "Finished your {category}",
+      "recordsSaved": "{count} records saved",
+      "mediaSaved": "{count} media files saved",
+      "mediaFailed": "{count} media files couldn't be saved yet",
+      "mediaPending": "{count} media files still to go",
+      "rateLimited": "Bluesky is rate limiting Cyd. Waiting until {time}, then carrying on.",
+      "cancelled": "Stopped. Everything Cyd already saved is still here.",
+      "outOfSpace": "This computer ran out of room. Everything Cyd already saved is still here; free up space and save again to carry on.",
+      "failed": "Something went wrong ({errorClass}). Everything Cyd already saved is still here, and saving again carries on from there."
+    },
+    "browse": {
+      "title": "Browse My Data",
+      "backToDashboard": "Back to dashboard",
+      "description": "Everything Cyd has saved, read from this computer. No Bluesky connection and no network needed.",
+      "empty": "Cyd hasn't saved any {category} yet.",
+      "nothingSavedAtAll": "Cyd hasn't saved anything for this account yet.",
+      "older": "Older",
+      "newest": "Back to newest",
+      "recordCount": "{count} saved",
+      "incomplete": "{available} of {expected} media files are here.",
+      "viewOnBluesky": "View on Bluesky",
+      "sourceDeleted": "No longer on Bluesky",
+      "assetUnavailable": "This media isn't here: {reason}",
+      "replyTo": "In reply to",
+      "quoting": "Quoting",
+      "linkTo": "Link",
+      "reposted": "Reposted",
+      "liked": "Liked",
+      "unknownAuthor": "An account Cyd didn't capture a handle for"
     }
   },
   "review": {
@@ -702,8 +769,11 @@
     },
     "bluesky": {
       "wizard": {
-        "dashboard": "\n# This is your Bluesky account in Cyd.\n\nIts private local storage is ready. Connect your account to start; saving your data and browsing it offline are coming soon.",
-        "connect": "\n# Connect your Bluesky account.\n\nAuthorize Cyd in your browser and it can start saving and managing your Bluesky data."
+        "dashboard": "\n# This is your Bluesky account in Cyd.\n\nSave your posts, reposts, likes, and bookmarks to this computer, and read them here whenever you like.",
+        "connect": "\n# Connect your Bluesky account.\n\nAuthorize Cyd in your browser and it can start saving and managing your Bluesky data.",
+        "save": "\n# Choose what to save.\n\nCyd saves each kind of data separately, with all of its media. You can stop a save at any time and carry on later.",
+        "browse": "\n# Everything Cyd has saved.\n\nThis is read from your own computer, so it works with no Bluesky connection and no network.",
+        "finished": "\n# Done.\n\nWhat Cyd saved is here to browse. Anything it couldn't fetch is marked, and saving again retries it."
       }
     }
   }

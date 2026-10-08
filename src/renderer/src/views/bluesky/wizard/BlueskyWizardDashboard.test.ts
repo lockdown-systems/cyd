@@ -74,36 +74,81 @@ describe("BlueskyWizardDashboard", () => {
     expect(wrapper.find(".no-identity").exists()).toBe(false);
   });
 
-  it("shows capabilities that later issues deliver as unavailable, not missing", () => {
+  it("offers connecting, saving, and browsing", () => {
     wrapper = mountDashboard();
 
-    const cards = wrapper.findAll(".dashboard .card");
-    const titles = cards.map((card) => card.find("h2").text());
+    const titles = wrapper
+      .findAll(".dashboard .card")
+      .map((card) => card.find("h2").text());
     expect(titles).toEqual([
       "Connect to Bluesky",
       "Save My Data",
       "Browse My Data",
     ]);
-
-    // Connecting is built; saving and browsing arrive in #676 and #677.
-    expect(cards[0].classes()).not.toContain("disabled-card");
-    expect(cards[0].find(".coming-soon-badge").exists()).toBe(false);
-    for (const card of cards.slice(1)) {
-      expect(card.classes()).toContain("disabled-card");
-      expect(card.attributes("aria-disabled")).toBe("true");
-      expect(card.find(".coming-soon-badge").text()).toBe("Coming soon");
-    }
   });
 
-  it("opens the connect page and nothing else", async () => {
+  it("saving waits for a connection, because it reads from Bluesky", () => {
     wrapper = mountDashboard();
 
-    for (const card of wrapper.findAll(".dashboard .card")) {
-      (card.element as HTMLElement).click();
-    }
+    const saveCard = wrapper.findAll(".dashboard .card")[1];
+    expect(saveCard.classes()).toContain("disabled-card");
+    expect(saveCard.attributes("aria-disabled")).toBe("true");
+    expect(saveCard.text()).toContain("Connect your Bluesky account first");
+  });
+
+  it("saving opens once the account holds an authorization", async () => {
+    wrapper = mountDashboard({
+      did: "did:plc:examplealice",
+      handle: "alice.bsky.social",
+      connectedAt: new Date(),
+    });
+
+    const saveCard = wrapper.findAll(".dashboard .card")[1];
+    expect(saveCard.classes()).not.toContain("disabled-card");
+
+    (saveCard.element as HTMLElement).click();
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.emitted("setState")).toEqual([["BlueskyWizardConnect"]]);
+    expect(wrapper.emitted("setState")).toEqual([["BlueskyWizardSave"]]);
+  });
+
+  it("browsing waits for something saved, not for a connection", async () => {
+    const model = createModel();
+    model.savedData = {
+      categories: [
+        {
+          category: "posts",
+          recordCount: 4,
+          assetsExpected: 3,
+          assetsAvailable: 2,
+        },
+      ],
+      complete: false,
+    };
+    wrapper = mount(BlueskyWizardDashboard, {
+      props: { model },
+      global: { plugins: [i18n] },
+    });
+
+    const browseCard = wrapper.findAll(".dashboard .card")[2];
+    expect(browseCard.classes()).not.toContain("disabled-card");
+    expect(wrapper.find(".saved-records").text()).toContain("4 records saved");
+    expect(wrapper.find(".saved-records .incomplete").text()).toContain(
+      "Some media is still missing",
+    );
+
+    (browseCard.element as HTMLElement).click();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.emitted("setState")).toEqual([["BlueskyWizardBrowse"]]);
+  });
+
+  it("browsing stays closed while there is nothing saved to read", () => {
+    wrapper = mountDashboard();
+
+    const browseCard = wrapper.findAll(".dashboard .card")[2];
+    expect(browseCard.classes()).toContain("disabled-card");
+    expect(wrapper.find(".saved-records").exists()).toBe(false);
   });
 
   it("says an account is linked but not connected", () => {

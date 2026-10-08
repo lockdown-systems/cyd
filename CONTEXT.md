@@ -53,6 +53,26 @@ _Avoid_: saved data, live feed, HTML export
 The latest representation of a Bluesky record observed by Cyd at a stable AT URI, together with its observation timestamps and deletion state. It is not a history of every CID revision.
 _Avoid_: saved record, record revision, live record
 
+**Bluesky collection run**:
+One pass over one Bluesky record category, listing its records and then fetching the media they expect. A run is durable and resumable: it commits each page together with the checkpoint describing it, so interrupting it keeps everything saved so far and the next run continues from there rather than starting again.
+_Avoid_: sync, scrape, import, download
+
+**Bluesky collection checkpoint**:
+How far a Bluesky collection run has got in one category, written in the same transaction as the work it describes. It is private runtime state and never travels in a Cyd Bluesky archive. A checkpoint is durable and a run's reported progress is not, so the two are named apart even though they carry the same counts.
+_Avoid_: sync state, resume point
+
+**Bluesky expected asset**:
+One media file a Bluesky saved record or captured profile is known to need, present or not. An asset that is not here is explicit, carries a reason, stays retryable, and makes the backup incomplete without calling the record it belongs to into question.
+_Avoid_: media, attachment, missing file
+
+**Bluesky captured profile**:
+One immutable snapshot of an author's labels as they were when a Bluesky saved record was observed. Refreshing a Bluesky identity's profile captures a new snapshot and repoints the identity's current profile; it never rewrites a snapshot a saved record was captured with.
+_Avoid_: profile, author, current profile
+
+**Bluesky storage preflight**:
+An account of what a Bluesky collection run is expected to need on disk against what is free, separating the part Cyd is certain about from the part it is estimating. Bluesky publishes no count for most categories, so a preflight refuses a run only when even the certain part does not fit, and reports everything else as uncertain rather than as a refusal.
+_Avoid_: disk check, size estimate, quota
+
 **Bluesky browse**:
 Inspection of Bluesky saved data inside Cyd without requiring a Bluesky connection or network access.
 _Avoid_: browse, view on Bluesky, live feed

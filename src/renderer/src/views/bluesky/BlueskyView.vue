@@ -82,7 +82,7 @@ onUnmounted(async () => {
     @set-state="setState($event)"
     @on-pause="model.pause()"
     @on-resume="model.resume()"
-    @on-cancel="emit('onRefreshClicked')"
+    @on-cancel="model.cancelSaving()"
     @on-clicking-enabled="clickingEnabled = true"
     @on-clicking-disabled="clickingEnabled = false"
   />
