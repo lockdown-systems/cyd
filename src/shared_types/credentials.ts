@@ -1,13 +1,5 @@
-/**
- * Which facility protects Cyd's persisted credentials at rest.
- *
- * These names describe what the operating system actually provides, not what
- * Cyd would like it to provide. `basic_text` is Chromium's obfuscation-only
- * fallback, `unknown` is a Linux password store Cyd cannot vouch for, and
- * `unavailable` means the platform offered nothing at all. Cyd persists
- * credentials either way; the last three mean it does so in the clear, and
- * says so.
- */
+// These names describe what the OS actually provides: `basic_text`,
+// `unknown`, and `unavailable` mean credentials are persisted in the clear.
 export type CredentialBackend =
   | "macos_keychain"
   | "windows_dpapi"

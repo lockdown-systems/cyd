@@ -16,19 +16,8 @@ import {
   type AccountCredentials,
 } from "../credentials";
 
-/**
- * Where every Bluesky OAuth session lives, for every part of Cyd.
- *
- * Sessions are keyed by DID, which is the Bluesky identity itself, so one
- * authorization serves every Cyd account that reaches for that identity: the X
- * platform's migration and the Bluesky platform both find the same entry. They
- * used to live in `account-${accountID}` vaults, which made a session
- * authorized under one account invisible to another and turned "disconnect"
- * into a prefix wipe of a whole vault.
- *
- * Nothing here deletes by prefix. A session belongs to a DID, and only that
- * DID's entry is ever removed.
- */
+// Shared OAuth store keyed by DID: one authorization serves every Cyd
+// account reaching for that identity. Only a DID's own entry is ever removed.
 const BLUESKY_OAUTH_VAULT = "bluesky-oauth";
 
 export const blueskyOAuthCredentials = (): AccountCredentials =>
@@ -39,11 +28,8 @@ const stateKey = (key: string): string => `${BLUESKY_OAUTH_STATE_PREFIX}${key}`;
 const sessionKey = (did: string): string =>
   `${BLUESKY_OAUTH_SESSION_PREFIX}${did}`;
 
-/**
- * The OAuth authorization state, which carries the PKCE verifier and a private
- * DPoP key. It is short-lived: the client deletes each entry once the matching
- * authorization comes back.
- */
+// Short-lived OAuth state (PKCE verifier, DPoP key); the client deletes each
+// entry once the matching authorization comes back.
 export const blueskyOAuthStateStore = (): NodeSavedStateStore => {
   const credentials = blueskyOAuthCredentials();
   return {
@@ -60,10 +46,7 @@ export const blueskyOAuthStateStore = (): NodeSavedStateStore => {
   };
 };
 
-/**
- * The OAuth session, which carries access and refresh tokens and a private
- * DPoP key, keyed by the DID it authorizes.
- */
+// OAuth session (tokens + DPoP key), keyed by the DID it authorizes.
 export const blueskyOAuthSessionStore = (): NodeSavedSessionStore => {
   const credentials = blueskyOAuthCredentials();
   return {
@@ -91,13 +74,8 @@ export const storedBlueskyOAuthDIDs = (): string[] =>
 export const hasStoredBlueskyOAuthSession = (did: string): boolean =>
   blueskyOAuthCredentials().get(sessionKey(did)) !== null;
 
-/**
- * Remove one identity's session and DPoP key material, and nothing else.
- *
- * This is the local half of revocation. Callers reach it through
- * `releaseBlueskyHold`, which revokes upstream first, because dropping the
- * local copy on its own leaves a refresh token alive at the PDS.
- */
+// The local half of revocation; callers go through `releaseBlueskyHold`,
+// which revokes upstream first so no refresh token is left alive at the PDS.
 export const deleteStoredBlueskyOAuthSession = (did: string): void => {
   blueskyOAuthCredentials().delete(sessionKey(did));
 };
@@ -109,13 +87,8 @@ export const storedBlueskyOAuthStateKeys = (): string[] =>
     .filter((key) => key.startsWith(BLUESKY_OAUTH_STATE_PREFIX))
     .map((key) => key.slice(BLUESKY_OAUTH_STATE_PREFIX.length));
 
-/**
- * The application state an authorization was started with, read without
- * consuming it: the OAuth client still needs the entry to finish the callback.
- *
- * Returns null when the state is unknown, which is what a stale, forged, or
- * already-completed callback looks like.
- */
+// Reads without consuming: the OAuth client still needs the entry to finish
+// the callback. Null means a stale, forged, or already-completed callback.
 export const storedBlueskyOAuthAppState = (key: string): string | null => {
   const stored = blueskyOAuthCredentials().get(stateKey(key));
   if (!stored) {
@@ -137,16 +110,8 @@ export const deleteStoredBlueskyOAuthState = (key: string): void => {
   blueskyOAuthCredentials().delete(stateKey(key));
 };
 
-/**
- * Move an account's Bluesky OAuth credentials into the shared store.
- *
- * Before the store was shared, the X migration wrote its sessions into the
- * account's own vault, where a Bluesky local account for the same identity
- * could not see them. Carrying those sessions forward is what stops anyone
- * being asked to authorize an identity Cyd already holds a live session for.
- * It is idempotent, and it never overwrites a shared entry: whatever is
- * already shared is at least as fresh.
- */
+// Idempotent; never overwrites a shared entry (whatever is shared is at
+// least as fresh).
 export const migrateAccountBlueskyOAuthCredentials = (
   accountID: number,
 ): number => {
@@ -173,23 +138,15 @@ export const migrateAccountBlueskyOAuthCredentials = (
     from.delete(key);
   }
 
-  // The account is not named: an account ID points straight at a person, the
-  // same way a handle or a DID does.
+  // The account is not named: an account ID identifies a person.
   log.info(
     `blueskyOAuth: moved ${moved} of ${keys.length} Bluesky OAuth credentials into the shared store`,
   );
   return moved;
 };
 
-/**
- * Carry every account's Bluesky OAuth credentials into the shared store.
- *
- * Run at startup, before anything asks who holds a session. Doing this per
- * account as its database opens is not enough: someone who upgrades and adds a
- * Bluesky account before ever opening the X account that authorized the
- * identity would be sent back to a browser for a session Cyd already had —
- * which is the papercut the shared store exists to remove.
- */
+// Run at startup, before anything asks who holds a session: migrating per
+// account at database-open is not enough.
 export const migrateAllAccountBlueskyOAuthCredentials = (): number => {
   let moved = 0;
   for (const account of getAccounts()) {

@@ -1,10 +1,7 @@
 import type { BlueskyIdentityProfile } from "./bluesky";
 
-/**
- * The X migration's view of a Bluesky identity. It is the same profile the
- * Bluesky platform reads, because both go through the same shared OAuth
- * session and the same AT Protocol call.
- */
+// Same profile the Bluesky platform reads: both go through the same shared
+// OAuth session and AT Protocol call.
 export type BlueskyMigrationProfile = BlueskyIdentityProfile;
 
 export interface BlueskyAPIError {

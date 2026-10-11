@@ -9,15 +9,8 @@ import { storedBlueskyOAuthAppState } from "./store";
 // callback against stored authorization state belongs to the main process.
 export * from "../shared_types/bluesky_oauth";
 
-/**
- * Which flow an authorization callback belongs to.
- *
- * The callback URL carries the OAuth `state` parameter, which names the stored
- * authorization state; that state holds the flow identifier. Reading it does
- * not consume it, because the OAuth client still needs the entry to finish the
- * exchange. A callback whose state Cyd does not hold — stale, forged, or
- * already spent — resolves to null and is not dispatched anywhere.
- */
+// Reads without consuming (the OAuth client still needs the entry); a
+// callback whose state Cyd does not hold resolves to null and is not dispatched.
 export const resolveBlueskyOAuthFlow = (
   queryString: string,
 ): BlueskyOAuthFlow | null => {

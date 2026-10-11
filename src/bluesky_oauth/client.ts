@@ -8,15 +8,9 @@ import {
 import { blueskyOAuthClientID } from "./constants";
 import { blueskyOAuthSessionStore, blueskyOAuthStateStore } from "./store";
 
-/**
- * The one `NodeOAuthClient` in Cyd.
- *
- * Client metadata resolution, the state store, and the session store are
- * settled here and nowhere else, so a platform cannot accidentally authorize
- * against different metadata or write a session somewhere the other platforms
- * cannot read it. The client is cached because fetching client metadata is a
- * network round trip, and every caller wants the same one.
- */
+// The one `NodeOAuthClient` in Cyd: stores and metadata are settled here so
+// every platform authorizes against the same one. Cached because fetching
+// client metadata is a network round trip.
 let client: NodeOAuthClient | null = null;
 let pending: Promise<NodeOAuthClient> | null = null;
 
@@ -49,11 +43,7 @@ export const getBlueskyOAuthClient = async (): Promise<NodeOAuthClient> => {
   return pending;
 };
 
-/**
- * Drop the cached client so the next caller builds a fresh one. Cyd reaches
- * for this when a client turns out to be unusable, and tests use it to keep
- * one test's client out of the next.
- */
+// Drop the cached client so the next caller builds a fresh one.
 export const resetBlueskyOAuthClient = (): void => {
   client = null;
   pending = null;
