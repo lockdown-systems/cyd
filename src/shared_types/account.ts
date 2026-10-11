@@ -56,11 +56,7 @@ export type XAccount = {
   tombstoneLockAccount: boolean;
 };
 
-/**
- * This installation's local representation of a Bluesky identity. It is
- * identified by its Cyd UUID, which is also the account's UUID, so a handle
- * change never moves its storage.
- */
+// Keyed by Cyd UUID, so a handle change never moves its storage.
 export type BlueskyLocalAccount = {
   uuid: string;
   createdAt: Date;
@@ -72,10 +68,7 @@ export type BlueskyLocalAccount = {
   handle: string | null;
   displayName: string | null;
   profileImageDataURI: string | null;
-  /**
-   * When this installation was last authorized to act on the identity, or null
-   * when it is not. The DID outlives a disconnection; this does not.
-   */
+  // The DID outlives a disconnection; this does not.
   connectedAt: Date | null;
 };
 

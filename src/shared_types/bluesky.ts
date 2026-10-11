@@ -7,13 +7,8 @@ import type { PlatformJob } from "./common";
 // Bluesky DID is the durable social identity. Handles and display names are
 // mutable profile data and never appear in storage paths.
 
-/**
- * Current profile data for a Bluesky identity, as fetched from its PDS.
- *
- * The DID is the identity; the handle, display name, and avatar are mutable
- * and are refreshed on every connection. None of them ever determines where
- * anything is stored.
- */
+// The DID is the identity; handle, display name, and avatar are mutable
+// profile data and never determine where anything is stored.
 export type BlueskyIdentityProfile = {
   did: string;
   handle: string;
@@ -54,10 +49,7 @@ export type BlueskyJob = PlatformJob & {
   scheduledAt: Date;
 };
 
-/**
- * Permanently deleting a Bluesky local account is irreversible, so the caller
- * must name the account UUID it means to destroy.
- */
+// Deletion is irreversible, so the caller must name the account UUID.
 export type BlueskyDeleteConfirmation = {
   confirmedAccountUUID: string;
 };

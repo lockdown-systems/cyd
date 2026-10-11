@@ -41,10 +41,7 @@ import {
   XTweetBlueskyMigrationRow,
 } from "../../types";
 
-/**
- * Service class for handling Bluesky migration operations for X/Twitter accounts.
- * This encapsulates all Bluesky-related functionality that was previously in XAccountController.
- */
+// Bluesky migration operations for X/Twitter accounts.
 export class BlueskyService {
   constructor(
     private db: Database.Database,
@@ -62,13 +59,7 @@ export class BlueskyService {
     private updateRateLimitInfo: (info: Partial<XRateLimitInfo>) => void,
   ) {}
 
-  /**
-   * Whether this X account's migration is connected, and to which identity.
-   *
-   * The DID is a public identifier, not a credential; the credentials it
-   * points at live in the shared Bluesky OAuth store, where a Bluesky local
-   * account for the same identity can reach them too.
-   */
+  // The DID is a public identifier; credentials live in the shared Bluesky OAuth store.
   private async connectedDID(): Promise<string | null> {
     return this.getConfig(BLUESKY_DID_CONFIG_KEY);
   }
@@ -90,13 +81,8 @@ export class BlueskyService {
     return getBlueskyProfile(did);
   }
 
-  /**
-   * Connect the migration to a Bluesky handle.
-   *
-   * An identity Cyd already holds a session for — because a Bluesky local
-   * account authorized it, or this account did before — is bound here without
-   * a second browser sign-in. Anything else starts one.
-   */
+  // An identity Cyd already holds a session for binds here without a second
+  // browser sign-in; anything else starts one.
   async authorize(handle: string): Promise<BlueskyConnectStart> {
     const start = await authorizeBlueskyIdentity(handle, {
       platform: "X",
@@ -106,11 +92,7 @@ export class BlueskyService {
       return start;
     }
 
-    // Reusing a session still has to bind the identity and confirm Cyd can
-    // read its profile, exactly as finishing a browser authorization does.
-    // Binding first is deliberate: an account that claims the identity is a
-    // holder of its session, and a profile call that fails must not leave the
-    // session with one fewer holder than it really has.
+    // Bind first: a profile failure must not leave the session under-counted.
     await this.setConfig(BLUESKY_DID_CONFIG_KEY, start.did);
     const profile = await getBlueskyProfile(start.did);
     if (!profile) {
@@ -122,13 +104,7 @@ export class BlueskyService {
     return start;
   }
 
-  /**
-   * Finish an authorization this account started and bind the identity to it.
-   *
-   * Connecting an identity Cyd already holds a session for does not ask for a
-   * second browser authorization; the migration simply joins the Bluesky
-   * platform as another holder of the same session.
-   */
+  // Finish an authorization this account started and bind the identity to it.
   async callback(queryString: string): Promise<boolean | string> {
     const authorization = await completeBlueskyAuthorization(queryString);
     if (!authorization.ok) {
@@ -144,15 +120,8 @@ export class BlueskyService {
     return true;
   }
 
-  /**
-   * Disconnect this account's migration.
-   *
-   * Only this account's hold is released. A Bluesky local account on the same
-   * identity keeps its connection and is never asked to re-authorize, and no
-   * path here can force a revocation on its behalf. Clearing the account's own
-   * state first is what makes the release honest: by the time the shared
-   * module counts who is left, this account is no longer among them.
-   */
+  // Releases only this account's hold; a Bluesky local account on the same
+  // identity keeps its connection.
   async disconnect(): Promise<void> {
     const did = await this.connectedDID();
 
@@ -160,9 +129,8 @@ export class BlueskyService {
     // claiming a connection before anything else happens.
     await this.deleteConfig(BLUESKY_DID_CONFIG_KEY);
 
-    // Older versions of Cyd kept the OAuth state and session in this account's
-    // config table and its own credential vault. Sweep both, in case a
-    // database predates the shared store.
+    // Older Cyd versions kept OAuth state/session in this account's config and
+    // credential vault; sweep both for legacy databases.
     await this.deleteConfigLike(`${BLUESKY_OAUTH_STATE_PREFIX}%`);
     await this.deleteConfigLike(`${BLUESKY_OAUTH_SESSION_PREFIX}%`);
     const legacyCredentials = accountCredentials(this.accountID);

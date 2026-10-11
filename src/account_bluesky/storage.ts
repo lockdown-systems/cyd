@@ -8,8 +8,7 @@ import type {
   BlueskySavedMedia,
 } from "../shared_types";
 
-// Every Bluesky local account owns one UUID-keyed directory. Handles are
-// mutable profile data, so they never appear in a path: renaming a Bluesky
+// Handles are mutable, so they never appear in a path: renaming a Bluesky
 // handle must never move a byte on disk.
 
 const ACCOUNT_TYPE_DIRECTORY = "Bluesky";
@@ -51,11 +50,8 @@ export const ensureOwnerOnlyFile = (filePath: string): string => {
   return filePath;
 };
 
-/**
- * SQLite creates the database and its write-ahead log side by side with
- * default permissions, and saved data lives in the log until it is
- * checkpointed. All three files must be owner-only.
- */
+// Saved data lives in the WAL until checkpointed, so the db, -wal, and -shm
+// files must all be owner-only.
 export const ensureOwnerOnlyDatabase = (databasePath: string): string => {
   for (const suffix of ["", "-wal", "-shm"]) {
     ensureOwnerOnlyFile(`${databasePath}${suffix}`);
@@ -63,10 +59,7 @@ export const ensureOwnerOnlyDatabase = (databasePath: string): string => {
   return databasePath;
 };
 
-/**
- * Where one Bluesky local account keeps its local resources. This only
- * computes paths; nothing is created.
- */
+// Computes paths only; nothing is created.
 export const blueskyAccountPaths = (
   accountUUID: string,
 ): BlueskyLocalAccountPaths => {
@@ -91,10 +84,7 @@ export const ensureBlueskyAccountStorage = (
   return paths;
 };
 
-/**
- * Permanently remove one account's local resources. Only this account's
- * UUID-keyed directory is touched, so sibling accounts are unaffected.
- */
+// Only this account's UUID-keyed directory is touched; siblings unaffected.
 export const removeBlueskyAccountStorage = (accountUUID: string): void => {
   const paths = blueskyAccountPaths(accountUUID);
   fs.rmSync(paths.accountPath, { recursive: true, force: true });
@@ -103,11 +93,8 @@ export const removeBlueskyAccountStorage = (accountUUID: string): void => {
 const sha256Digest = (data: Buffer): string =>
   crypto.createHash("sha256").update(data).digest("hex");
 
-/**
- * Where an asset with this digest lives inside an account's media store. The
- * layout matches the Cyd Bluesky archive v2 media layout so translation
- * between runtime storage and an archive stays mechanical.
- */
+// This media layout intentionally mirrors the Cyd Bluesky archive v2 media
+// layout, so translation between runtime storage and an archive stays mechanical.
 export const blueskyMediaPath = (mediaPath: string, digest: string): string => {
   if (!/^[0-9a-f]{64}$/.test(digest)) {
     throw new Error(`Invalid media digest: ${digest}`);
@@ -117,10 +104,7 @@ export const blueskyMediaPath = (mediaPath: string, digest: string): string => {
 
 export type StoredMediaFile = Omit<BlueskySavedMedia, "mediaType">;
 
-/**
- * Write bytes into an account's content-addressed media store. Storing the
- * same bytes twice reuses the single stored copy.
- */
+// Content-addressed: storing the same bytes twice reuses the single copy.
 export const storeBlueskyMediaFile = (
   mediaPath: string,
   data: Buffer,
@@ -150,10 +134,7 @@ export const storeBlueskyMediaFile = (
   };
 };
 
-/**
- * Create an isolated scratch directory for one piece of in-progress work.
- * Staging data is disposable: nothing outside it may depend on it.
- */
+// Staging data is disposable: nothing outside it may depend on it.
 export const createBlueskyStagingArea = (
   stagingPath: string,
   label: string,

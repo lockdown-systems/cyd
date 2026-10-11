@@ -17,15 +17,9 @@ import {
 import { blueskyDiagnostic } from "./diagnostics";
 
 /**
- * Renderer-side owner of one Bluesky local account's view state.
- *
- * Bluesky uses the AT Protocol directly, so this view model never drives an
- * embedded browser: there is no login page to automate and no page to scrape.
- * Every call into the account's local resources goes through the Bluesky IPC
- * boundary, so the renderer never touches storage itself.
- *
- * The dashboard is reachable with no Bluesky connection and no saved data.
- * Saving and browsing arrive in #676 and #677.
+ * Renderer-side owner of one Bluesky local account's view state. Bluesky uses
+ * the AT Protocol directly, so this view model never drives an embedded
+ * browser; all calls go through the Bluesky IPC boundary.
  */
 export class BlueskyViewModel extends BaseViewModel {
   public progress: BlueskyProgress = emptyBlueskyProgress();
@@ -45,14 +39,7 @@ export class BlueskyViewModel extends BaseViewModel {
     this.state = State.BlueskyWizardDashboard;
   }
 
-  /**
-   * An automatic Bluesky error report names no account: a handle and a DID both
-   * identify a person, and neither belongs in one. Spelled out rather than left
-   * to the core's default, so that adding a label here is a deliberate choice
-   * against the ADR rather than an oversight.
-   *
-   * See docs/adr/0029-minimize-bluesky-diagnostics.md.
-   */
+  // Error reports for Bluesky deliberately name no account (handle or DID).
   protected get errorReportAccountLabel(): string {
     return "";
   }
@@ -62,13 +49,7 @@ export class BlueskyViewModel extends BaseViewModel {
     return this.account.blueskyLocalAccount;
   }
 
-  /**
-   * Whether this installation is authorized to act on the identity right now.
-   *
-   * A Bluesky local account keeps its DID after disconnecting, because that
-   * DID is how an archive import recognizes the identity again. Being
-   * connected is the separate, reversible fact.
-   */
+  // The DID persists after disconnecting; connectedness is the reversible fact.
   get isConnected(): boolean {
     return Boolean(this.localAccount?.connectedAt);
   }
@@ -128,13 +109,9 @@ export class BlueskyViewModel extends BaseViewModel {
   }
 
   /**
-   * Start a browser authorization for a handle.
-   *
-   * Cyd shares one Bluesky OAuth implementation and one DID-keyed session
-   * store across platforms, so an identity already authorized through the X
-   * migration wizard connects here without a second browser sign-in.
-   * Authorization is OAuth against the identity's own PDS, never an app
-   * password.
+   * Start a browser authorization for a handle. OAuth against the identity's
+   * own PDS (never an app password); an identity already authorized through
+   * another Cyd wizard reuses its session without a second sign-in.
    */
   async connect(handle: string): Promise<BlueskyConnectStart> {
     this.connectError = "";
@@ -194,14 +171,7 @@ export class BlueskyViewModel extends BaseViewModel {
     }
   }
 
-  /**
-   * Remove this installation's authorization, keeping the local account and
-   * all of its Bluesky saved data.
-   *
-   * Only this account's hold on the shared session is released. An X account
-   * migrating to the same identity stays connected, and nothing here can sign
-   * it out: there is no force-revoke to offer.
-   */
+  // Removes only this account's hold on the shared session; saved data is kept.
   async disconnect(): Promise<void> {
     try {
       await window.electron.Bluesky.disconnect(this.account.id);

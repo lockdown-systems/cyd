@@ -25,14 +25,9 @@ import {
   storedBlueskyOAuthStateKeys,
 } from "./store";
 
-/**
- * Authorizing, restoring, and releasing a Bluesky identity.
- *
- * Every platform in Cyd reaches Bluesky through this file. Authorization is
- * OAuth against the identity's own PDS and every call afterwards is a direct
- * AT Protocol call: Cyd never asks for an app password, never scrapes a page,
- * and never intercepts a request.
- */
+// Authorizing, restoring, and releasing a Bluesky identity. Every platform
+// in Cyd reaches Bluesky through this file: OAuth against the identity's own
+// PDS, never an app password.
 
 /** The outcome of finishing a browser authorization. */
 export type BlueskyAuthorization =
@@ -42,12 +37,7 @@ export type BlueskyAuthorization =
 const errorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
-/**
- * The live session for an identity, refreshed if it is close to expiring.
- *
- * Every platform restores through here, so a session refreshed for the X
- * migration is the same one the Bluesky platform picks up a moment later.
- */
+// Every platform restores through here, so all platforms share one live session.
 export const restoreBlueskySession = async (
   did: string,
 ): Promise<OAuthSession> => {
@@ -76,10 +66,7 @@ export const blueskySessionIsUsable = async (did: string): Promise<boolean> => {
 const normalizeHandle = (handle: string): string =>
   handle.startsWith("@") ? handle.slice(1) : handle;
 
-/**
- * The identity behind a handle. Handles change and DIDs do not, so every
- * decision about a session is made on the DID.
- */
+// Handles change and DIDs do not: every session decision is made on the DID.
 const resolveBlueskyIdentifier = async (
   identifier: string,
 ): Promise<string | null> => {
@@ -88,9 +75,8 @@ const resolveBlueskyIdentifier = async (
     const { did } = await client.identityResolver.resolve(identifier);
     return did;
   } catch (error) {
-    // Not being able to resolve a handle is not a failure to connect: it just
-    // means Cyd cannot shortcut, and the authorization request will report a
-    // bad handle properly.
+    // Resolution failure is not a connection failure; the authorization
+    // request will report a bad handle properly.
     log.info(
       "blueskyOAuth: could not resolve an identifier before authorizing",
       errorMessage(error),
@@ -99,20 +85,10 @@ const resolveBlueskyIdentifier = async (
   }
 };
 
-/**
- * Connect a handle on behalf of one flow.
- *
- * When Cyd already holds a usable session for the identity behind the handle,
- * nothing opens: the caller simply becomes another holder of the session that
- * is already there. That is what keeps a person from authorizing the same
- * identity twice, once through the X migration wizard and once as a Bluesky
- * account.
- *
- * Otherwise a browser authorization starts, carrying the flow identifier as
- * the OAuth request's application state so the answer finds its way back to
- * whichever platform asked — even if Cyd is restarted in between, and even if
- * another authorization is already in the air.
- */
+// When Cyd already holds a usable session for the identity behind the handle,
+// the caller becomes another holder of it without a second sign-in. Otherwise
+// a browser authorization starts, carrying the flow identifier as OAuth state
+// so the answer finds its way back to whichever platform asked.
 export const authorizeBlueskyIdentity = async (
   handle: string,
   flow: BlueskyOAuthFlow,
@@ -139,13 +115,8 @@ export const authorizeBlueskyIdentity = async (
   }
 };
 
-/**
- * Finish a browser authorization.
- *
- * The session it produces is written to the shared store under the DID it
- * authorizes, which is what makes one authorization enough for every part of
- * Cyd that wants that identity.
- */
+// The session is written to the shared store under its DID, so one
+// authorization serves every part of Cyd that wants that identity.
 export const completeBlueskyAuthorization = async (
   queryString: string,
 ): Promise<BlueskyAuthorization> => {
@@ -214,14 +185,8 @@ export const getBlueskyProfile = async (
   };
 };
 
-/**
- * Sign an identity out at its PDS and destroy every local trace of it.
- *
- * Revoking upstream comes first, because once the refresh token is gone
- * locally Cyd can no longer tell the authorization server to invalidate it. A
- * server Cyd cannot reach must not strand the local material either, so the
- * local delete runs whether or not the revocation succeeded.
- */
+// Revoke upstream first (the refresh token is needed to do it), but delete
+// local material regardless of whether the revocation succeeded.
 const revokeBlueskyIdentity = async (did: string): Promise<void> => {
   try {
     const client = await getBlueskyOAuthClient();
@@ -238,18 +203,9 @@ const revokeBlueskyIdentity = async (did: string): Promise<void> => {
   log.info("blueskyOAuth: revoked a session and deleted its local material");
 };
 
-/**
- * Release one account's hold on an identity.
- *
- * The caller has already made its own state say it is disconnected — cleared
- * its DID, or deleted the account — so this only has to ask who is left. While
- * anyone is, the session stays exactly as it is and nobody is signed out. When
- * nobody is, the session is revoked at the PDS and every local trace of it is
- * destroyed.
- *
- * No caller passes in which holder it was, and none can force a revocation: an
- * account can only ever release its own hold.
- */
+// The caller has already cleared its own state, so this only asks who is
+// left: while anyone holds the identity the session stays; when nobody does
+// it is revoked. No caller can force a revocation on another holder.
 export const releaseBlueskyHold = async (did: string): Promise<void> => {
   if (!did) {
     return;
@@ -263,14 +219,8 @@ export const releaseBlueskyHold = async (did: string): Promise<void> => {
   await revokeBlueskyIdentity(did);
 };
 
-/**
- * Revoke sessions nothing holds and discard authorizations nothing can finish.
- *
- * Interrupted work is the only way to reach either state: a quit between
- * clearing an account's connection and revoking its session, or an account
- * deleted while its browser authorization was still open. Run at startup, this
- * makes both self-correcting rather than permanent.
- */
+// Startup sweep: revoke sessions nothing holds, discard authorizations
+// nothing can finish. Makes interrupted work self-correcting.
 export const sweepOrphanedBlueskyOAuth = async (): Promise<number> => {
   let swept = 0;
 
@@ -279,10 +229,8 @@ export const sweepOrphanedBlueskyOAuth = async (): Promise<number> => {
     try {
       holderCount = blueskyHolders(did).length;
     } catch (error) {
-      // An account whose state cannot be read might still be holding this
-      // identity, so it is left alone. One unreadable account must not stop
-      // the sweep for every other identity, which is why this is caught per
-      // DID rather than around the loop.
+      // An unreadable account might still hold this identity, so leave it
+      // alone; catch per DID so one failure doesn't stop the sweep.
       log.error(
         "blueskyOAuth: could not decide whether an identity is still held, leaving it alone",
         errorMessage(error),
@@ -299,10 +247,8 @@ export const sweepOrphanedBlueskyOAuth = async (): Promise<number> => {
 
   for (const stateKey of storedBlueskyOAuthStateKeys()) {
     const flow = parseBlueskyOAuthFlowID(storedBlueskyOAuthAppState(stateKey));
-    // An authorization whose state Cyd cannot read, or whose account is gone,
-    // can never be completed. An authorization for an account that still
-    // exists is left alone: the user may be finishing it in their browser
-    // right now, and on Linux and Windows that can outlive the app.
+    // Unreadable state or a gone account means it can never be completed; an
+    // account that still exists may be finishing it in the browser right now.
     if (!flow || getAccount(flow.accountID) === null) {
       deleteStoredBlueskyOAuthState(stateKey);
       swept += 1;

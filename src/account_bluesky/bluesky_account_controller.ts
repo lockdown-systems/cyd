@@ -41,15 +41,8 @@ import {
 import { migrations } from "./controller/migrations";
 import type { BlueskyJobRow, BlueskyMediaRow } from "./types";
 
-/**
- * Owns one Bluesky local account's isolated local resources: its private
- * runtime database, content-addressed media store, job state, and staging
- * area. Everything it touches lives under one UUID-keyed directory, so two
- * local accounts can never read or delete each other's data.
- *
- * Bluesky uses direct AT Protocol APIs, so this controller has no MITM
- * interception or webview scraping.
- */
+// Owns one Bluesky local account's isolated local resources, all under one
+// UUID-keyed directory so accounts can never read or delete each other's data.
 export class BlueskyAccountController {
   public accountID: number;
   public accountUUID: string = "";
@@ -162,15 +155,8 @@ export class BlueskyAccountController {
     return Boolean(this.account?.connectedAt);
   }
 
-  /**
-   * Start a browser authorization for a handle.
-   *
-   * This goes through the one Bluesky OAuth implementation in Cyd, so an
-   * identity the X migration already authorized needs no second sign-in: the
-   * shared session is found by DID and reused. Authorization is OAuth and
-   * every call afterwards is a direct AT Protocol call — never an app
-   * password, never scraping, never interception.
-   */
+  // Shared OAuth implementation: an identity authorized elsewhere (e.g. the X
+  // migration) is reused by DID without a second sign-in.
   async connect(handle: string): Promise<BlueskyConnectStart> {
     const start = await authorizeBlueskyIdentity(handle, {
       platform: "Bluesky",
@@ -240,16 +226,8 @@ export class BlueskyAccountController {
     });
   }
 
-  /**
-   * Remove this installation's authorization to act on the identity, keeping
-   * the local account and every byte of Bluesky saved data.
-   *
-   * Only this account's hold is released. An X account whose migration is
-   * connected to the same identity stays connected and is never asked to
-   * re-authorize; the session is revoked at the PDS only once nobody is left
-   * holding it. Recording the disconnection first is what makes the release
-   * honest: by then this account is no longer among the holders.
-   */
+  // Keeps the local account and all saved data; only this account's hold is
+  // released, and the session is revoked only once nobody is left holding it.
   async disconnect(): Promise<void> {
     const did = this.account?.did ?? null;
     if (!this.accountUUID) {
@@ -263,10 +241,7 @@ export class BlueskyAccountController {
     }
   }
 
-  /**
-   * Update mutable profile data. A handle change never moves storage, because
-   * storage is keyed by the Cyd UUID.
-   */
+  // A handle change never moves storage; storage is keyed by the Cyd UUID.
   updateProfile(profile: {
     handle?: string | null;
     displayName?: string | null;

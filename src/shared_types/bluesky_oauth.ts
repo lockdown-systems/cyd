@@ -1,16 +1,7 @@
-/**
- * How a Bluesky authorization finds its way back to whoever started it.
- *
- * Cyd used to remember the account in a single global config key and dispatch
- * the callback to `blueskyOAuthCallback-${accountID}`. That allowed exactly one
- * authorization at a time and assumed the initiator was an X account. A flow
- * identifier travels inside the OAuth request instead, so two authorizations
- * can be in the air at once and each comes back to the platform that asked.
- *
- * These names are a contract between the main process, which routes the
- * callback, and the renderer, which listens for it, so they live with the
- * other shared types rather than inside either side.
- */
+// How a Bluesky authorization finds its way back to whoever started it: a
+// flow identifier travels inside the OAuth request, so two authorizations can
+// be in the air at once and each returns to the platform that asked. These
+// names are a contract between the main process and the renderer.
 
 export type BlueskyOAuthPlatform = "X" | "Bluesky";
 
@@ -21,11 +12,8 @@ export type BlueskyOAuthFlow = {
 
 const FLOW_ID_PATTERN = /^(X|Bluesky):(\d+)$/;
 
-/**
- * The flow identifier, carried as the OAuth request's application state. The
- * authorization server echoes it back, so the identifier survives a browser
- * round trip and an app restart without Cyd holding anything in memory.
- */
+// Carried as OAuth application state, so it survives a browser round trip
+// and an app restart without Cyd holding anything in memory.
 export const blueskyOAuthFlowID = (flow: BlueskyOAuthFlow): string =>
   `${flow.platform}:${flow.accountID}`;
 
@@ -46,13 +34,8 @@ export const parseBlueskyOAuthFlowID = (
 export const blueskyOAuthCallbackEventName = (flow: BlueskyOAuthFlow): string =>
   `blueskyOAuthCallback-${blueskyOAuthFlowID(flow)}`;
 
-/**
- * What happened when a platform asked to connect a handle.
- *
- * `reused` is the point of sharing one session store across platforms: the
- * identity is already authorized, so the caller binds it and there is no
- * browser round trip and no callback to wait for.
- */
+// `reused`: the identity is already authorized via the shared session store,
+// so the caller binds it with no browser round trip.
 export type BlueskyConnectStart =
   | { status: "reused"; did: string }
   | { status: "browser" }

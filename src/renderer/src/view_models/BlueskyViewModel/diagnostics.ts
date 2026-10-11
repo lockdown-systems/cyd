@@ -1,11 +1,4 @@
-/**
- * Automatic Bluesky diagnostics carry operational metadata only: the state or
- * job that failed and the class of error. They never carry record or chat
- * content, media, handles, DIDs, credentials, or local paths, which rules out
- * error messages because a message can quote any of those.
- *
- * See docs/adr/0029-minimize-bluesky-diagnostics.md.
- */
+// Diagnostics carry operational metadata only (state, job, error class) — never content, handles, DIDs, credentials, or paths, so never include error messages.
 export type BlueskyDiagnostic = {
   /** The view model state that failed. */
   state: string;

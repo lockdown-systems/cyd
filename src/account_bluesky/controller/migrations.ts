@@ -1,12 +1,7 @@
 import type { Migration } from "../../database";
 
-/**
- * Migrations for one Bluesky local account's private runtime database.
- *
- * This database belongs to a single account and is never a compatibility
- * surface: the Cyd Bluesky archive interchange schema is what travels between
- * clients.
- */
+// This database belongs to a single account; the Cyd Bluesky archive
+// interchange schema is what travels between clients.
 export const migrations: Migration[] = [
   {
     name: "initial",
