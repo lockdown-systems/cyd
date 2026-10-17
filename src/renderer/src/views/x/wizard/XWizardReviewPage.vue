@@ -160,17 +160,36 @@ const deleteTweetsConditions = computed(() => {
     );
   }
 
+  if (xAccount?.deleteTweetsFilterEnabled && xAccount.deleteTweetsFilterText) {
+    conditions.push(
+      t("review.thatContain", { text: xAccount.deleteTweetsFilterText }),
+    );
+  }
+
   return conditions.join(" ");
 });
 
 const deleteRetweetsConditions = computed(() => {
   const xAccount = props.model.account?.xAccount;
-  if (!xAccount?.deleteRetweetsDaysOldEnabled) {
-    return "";
+  const conditions: string[] = [];
+
+  if (xAccount?.deleteRetweetsDaysOldEnabled) {
+    conditions.push(
+      t("review.thatAreOlderThan", {
+        days: xAccount.deleteRetweetsDaysOld,
+      }),
+    );
   }
-  return t("review.thatAreOlderThan", {
-    days: xAccount.deleteRetweetsDaysOld,
-  });
+  if (
+    xAccount?.deleteRetweetsFilterEnabled &&
+    xAccount.deleteRetweetsFilterText
+  ) {
+    conditions.push(
+      t("review.thatContain", { text: xAccount.deleteRetweetsFilterText }),
+    );
+  }
+
+  return conditions.join(" ");
 });
 
 // Dynamic breadcrumb buttons

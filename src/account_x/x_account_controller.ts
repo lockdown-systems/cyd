@@ -58,6 +58,7 @@ import * as Jobs from "./controller/jobs";
 import * as Account from "./controller/account";
 import { fetchTweetsWithMediaAndURLsFromDB } from "./controller/fetchTweetsWithMediaAndURLs";
 import { migrations } from "./controller/migrations";
+import { registerContainsFilterFunction } from "./controller/deletion/containsFilter";
 import { BlueskyService } from "./controller/bluesky/BlueskyService";
 import { sweepLegacyOAuthCredentials } from "../credentials";
 import { migrateAccountBlueskyOAuthCredentials } from "../bluesky_oauth";
@@ -195,6 +196,7 @@ export class XAccountController extends BaseAccountController<XProgress> {
     log.info(`XAccountController.initDB: dbPath=${dbPath}`);
     this.db = new Database(dbPath, {});
     this.db.pragma("journal_mode = WAL");
+    registerContainsFilterFunction(this.db);
     runMigrations(this.db, migrations);
 
     // Older versions stored the X-to-Bluesky OAuth state and session in this

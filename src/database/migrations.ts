@@ -279,6 +279,16 @@ SELECT id, type, sortOrder, xAccountId, uuid, facebookAccountID FROM account;`,
       `ALTER TABLE blueskyLocalAccount ADD COLUMN connectedAt DATETIME DEFAULT NULL;`,
     ],
   },
+  // Add the "only if they contain ..." delete filters for tweets and retweets
+  {
+    name: "add deleteTweetsFilter and deleteRetweetsFilter to xAccount",
+    sql: [
+      `ALTER TABLE xAccount ADD COLUMN deleteTweetsFilterEnabled BOOLEAN DEFAULT 0;`,
+      `ALTER TABLE xAccount ADD COLUMN deleteTweetsFilterText TEXT DEFAULT '';`,
+      `ALTER TABLE xAccount ADD COLUMN deleteRetweetsFilterEnabled BOOLEAN DEFAULT 0;`,
+      `ALTER TABLE xAccount ADD COLUMN deleteRetweetsFilterText TEXT DEFAULT '';`,
+    ],
+  },
 ];
 
 export const runMainMigrations = () => {

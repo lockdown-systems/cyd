@@ -97,6 +97,94 @@ describe("XAccountController - Deletion", () => {
 
       expect(ids).toEqual(["eligible"]);
     });
+
+    test("only returns tweets containing the filter text when enabled", async () => {
+      controller.account!.deleteTweetsFilterEnabled = true;
+      controller.account!.deleteTweetsFilterText = "@Someone";
+
+      seedTweet(controller, {
+        tweetID: "mentions",
+        text: "hey @someone look at this",
+      });
+      seedTweet(controller, {
+        tweetID: "reply",
+        text: "@SOMEONE no way",
+      });
+      seedTweet(controller, {
+        tweetID: "unrelated",
+        text: "nothing to see here",
+      });
+      seedTweet(controller, {
+        tweetID: "retweet-of-them",
+        text: "RT @someone: their post",
+      });
+
+      const result = await controller.deleteTweetsStart();
+      const ids = result.tweets.map((tweet) => tweet.id).sort();
+
+      expect(ids).toEqual(["mentions", "reply"]);
+    });
+
+    test("matches whole words only, and a star matches the rest of a word", async () => {
+      seedTweet(controller, {
+        tweetID: "hashtag",
+        text: "#Coffee - Fresh Cup",
+      });
+      seedTweet(controller, { tweetID: "bot", text: "@CoffeeBot hello" });
+      seedTweet(controller, { tweetID: "glued", text: "coffeeTHIS" });
+      seedTweet(controller, { tweetID: "other", text: "nothing here" });
+
+      controller.account!.deleteTweetsFilterEnabled = true;
+      controller.account!.deleteTweetsFilterText = "Coffee";
+      const whole = await controller.deleteTweetsStart();
+      expect(whole.tweets.map((tweet) => tweet.id)).toEqual(["hashtag"]);
+
+      controller.account!.deleteTweetsFilterText = "Coffee*";
+      const starred = await controller.deleteTweetsStart();
+      expect(starred.tweets.map((tweet) => tweet.id).sort()).toEqual([
+        "bot",
+        "glued",
+        "hashtag",
+      ]);
+    });
+
+    test("does not filter at all for stars alone", async () => {
+      seedTweet(controller, { tweetID: "a", text: "one" });
+      seedTweet(controller, { tweetID: "b", text: "two" });
+
+      controller.account!.deleteTweetsFilterEnabled = true;
+      controller.account!.deleteTweetsFilterText = "*";
+      const result = await controller.deleteTweetsStart();
+
+      // The page never lets this through, so it must at least not be treated
+      // as a filter that matches a particular post
+      expect(result.tweets.length).toBe(2);
+    });
+
+    test("treats LIKE wildcards in the filter text literally", async () => {
+      controller.account!.deleteTweetsFilterEnabled = true;
+      controller.account!.deleteTweetsFilterText = "100%";
+
+      seedTweet(controller, { tweetID: "literal", text: "I am 100% sure" });
+      seedTweet(controller, { tweetID: "not-literal", text: "100 percent" });
+
+      const result = await controller.deleteTweetsStart();
+      const ids = result.tweets.map((tweet) => tweet.id);
+
+      expect(ids).toEqual(["literal"]);
+    });
+
+    test("ignores the filter text when the filter is disabled", async () => {
+      controller.account!.deleteTweetsFilterEnabled = false;
+      controller.account!.deleteTweetsFilterText = "@someone";
+
+      seedTweet(controller, { tweetID: "a", text: "@someone hi" });
+      seedTweet(controller, { tweetID: "b", text: "unrelated" });
+
+      const result = await controller.deleteTweetsStart();
+
+      expect(result.tweets.length).toBe(2);
+    });
   });
 
   describe("deleteRetweetsStart", () => {
@@ -136,6 +224,33 @@ describe("XAccountController - Deletion", () => {
       const ids = result.tweets.map((tweet) => tweet.id);
 
       expect(ids).toEqual(["old-retweet"]);
+    });
+
+    test("only returns retweets containing the filter text when enabled", async () => {
+      controller.account!.deleteRetweetsFilterEnabled = true;
+      controller.account!.deleteRetweetsFilterText = "@someone";
+
+      seedTweet(controller, {
+        tweetID: "retweet-of-them",
+        text: "RT @Someone: their post",
+      });
+      seedTweet(controller, {
+        tweetID: "retweet-mentioning-them",
+        text: "RT @other: cc @someone",
+      });
+      seedTweet(controller, {
+        tweetID: "other-retweet",
+        text: "RT @other: unrelated",
+      });
+      seedTweet(controller, {
+        tweetID: "regular-tweet",
+        text: "@someone not a retweet",
+      });
+
+      const result = await controller.deleteRetweetsStart();
+      const ids = result.tweets.map((tweet) => tweet.id).sort();
+
+      expect(ids).toEqual(["retweet-mentioning-them", "retweet-of-them"]);
     });
   });
 
@@ -276,6 +391,17 @@ describe("XAccountController - Deletion", () => {
       const count = await controller.deleteTweetsCountNotArchived(false);
 
       expect(count).toBe(1);
+    });
+
+    test("applies the contains filter when total=false but not when total=true", async () => {
+      controller.account!.deleteTweetsFilterEnabled = true;
+      controller.account!.deleteTweetsFilterText = "butter";
+
+      seedTweet(controller, { tweetID: "match", text: "butter is great" });
+      seedTweet(controller, { tweetID: "no-match", text: "margarine is fine" });
+
+      expect(await controller.deleteTweetsCountNotArchived(false)).toBe(1);
+      expect(await controller.deleteTweetsCountNotArchived(true)).toBe(2);
     });
   });
 });
