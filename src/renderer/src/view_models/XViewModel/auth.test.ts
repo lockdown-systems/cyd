@@ -307,11 +307,17 @@ describe("auth.ts", () => {
   });
 
   describe("loadUserStats", () => {
-    it("should show browser and automation notice", async () => {
+    it("should show the browser and keep the automation notice off while logging in", async () => {
+      // The notice blocks clicks, so it can't be on while the user may need to log in
+      let noticeDuringLogin: boolean | undefined;
+      mockVM.login = vi.fn().mockImplementation(async () => {
+        noticeDuringLogin = mockVM.showAutomationNotice;
+      });
+
       await Auth.loadUserStats(mockVM as XViewModel);
 
       expect(mockVM.showBrowser).toBe(true);
-      expect(mockVM.showAutomationNotice).toBe(true);
+      expect(noticeDuringLogin).toBe(false);
     });
 
     it("should call login", async () => {

@@ -109,7 +109,9 @@ export async function login(vm: XViewModel): Promise<void> {
 export async function loadUserStats(vm: XViewModel): Promise<void> {
   vm.log("loadUserStats", "loading user stats");
   vm.showBrowser = true;
-  vm.showAutomationNotice = true;
+  // login() shows the automation notice itself once login succeeds. Keep it off
+  // until then, otherwise someone who isn't logged in can't click the login form
+  vm.showAutomationNotice = false;
 
   vm.log("login", "getting user stats");
   vm.instructions = vm.t("viewModels.x.auth.loadingStats");
