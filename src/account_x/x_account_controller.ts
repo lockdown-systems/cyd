@@ -21,6 +21,7 @@ import {
   XIndexTimelineStats,
   emptyXIndexTimelineStats,
   DEFAULT_X_RATE_LIMIT_SECONDS,
+  X_RATE_LIMIT_REMAINING_THRESHOLD,
   XDeleteTweetsStartResponse,
   XProgressInfo,
   ResponseData,
@@ -120,8 +121,43 @@ export class XAccountController extends BaseAccountController<XProgress> {
             Math.floor(Date.now() / 1000) + DEFAULT_X_RATE_LIMIT_SECONDS,
           );
         }
+      } else {
+        this.observeDeleteRateLimitHeaders(details);
       }
     });
+  }
+
+  // Only the delete mutations: peripheral endpoints run out of quota first
+  // and must not stall a delete run.
+  private static readonly DELETE_OPERATION_URL =
+    /\/graphql\/[^/?]+\/(DeleteTweet|DeleteRetweet|UnfavoriteTweet|DeleteBookmark)(\?|$)/;
+
+  // Mark the account rate limited when a delete mutation reports little quota
+  // left, so the delete loop pauses before provoking a 429.
+  observeDeleteRateLimitHeaders(details: {
+    url: string;
+    statusCode: number;
+    responseHeaders?: Record<string, string | string[]>;
+  }): void {
+    if (details.statusCode !== 200 || !details.responseHeaders) {
+      return;
+    }
+    if (!XAccountController.DELETE_OPERATION_URL.test(details.url)) {
+      return;
+    }
+
+    const remaining = Number(details.responseHeaders["x-rate-limit-remaining"]);
+    const reset = Number(details.responseHeaders["x-rate-limit-reset"]);
+    if (Number.isNaN(remaining) || !reset) {
+      return;
+    }
+
+    if (remaining <= X_RATE_LIMIT_REMAINING_THRESHOLD) {
+      log.info(
+        `XAccountController: ${remaining} requests left before X rate limits ${details.url}, pausing until ${reset}`,
+      );
+      this.markRateLimited(reset);
+    }
   }
 
   // A GraphQL request names its operation identifier and then its operation:

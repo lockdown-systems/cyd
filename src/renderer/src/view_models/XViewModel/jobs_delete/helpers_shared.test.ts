@@ -110,6 +110,37 @@ describe("helpers_shared.ts", () => {
       expect(vm.waitForRateLimit).toHaveBeenCalled();
     });
 
+    it("should wait out a pending rate limit before sending the delete", async () => {
+      const mockDeleteFn = vi.fn().mockResolvedValue(200);
+      vi.spyOn(vm, "waitForRateLimit").mockResolvedValue(undefined);
+      mockElectron.X.isRateLimited.mockResolvedValue({
+        isRateLimited: true,
+        rateLimitReset: Date.now() + 1000,
+      });
+
+      const result = await DeleteHelpers.deleteContentRetryLoop(
+        vm,
+        mockDeleteFn,
+      );
+
+      expect(result).toEqual({ success: true, statusCode: 200 });
+      expect(vm.waitForRateLimit).toHaveBeenCalledTimes(1);
+      expect(mockDeleteFn).toHaveBeenCalledTimes(1);
+      expect(
+        vi.mocked(vm.waitForRateLimit).mock.invocationCallOrder[0],
+      ).toBeLessThan(mockDeleteFn.mock.invocationCallOrder[0]);
+    });
+
+    it("should not wait when no rate limit is pending", async () => {
+      const mockDeleteFn = vi.fn().mockResolvedValue(200);
+      vi.spyOn(vm, "waitForRateLimit").mockResolvedValue(undefined);
+
+      await DeleteHelpers.deleteContentRetryLoop(vm, mockDeleteFn);
+
+      expect(mockElectron.X.isRateLimited).toHaveBeenCalledWith(1);
+      expect(vm.waitForRateLimit).not.toHaveBeenCalled();
+    });
+
     it("should return failure after 3 unsuccessful tries", async () => {
       const mockDeleteFn = vi.fn().mockResolvedValue(500);
       vi.spyOn(vm, "sleep").mockResolvedValue(undefined);

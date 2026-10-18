@@ -186,6 +186,9 @@ export function emptyXRateLimitInfo(): XRateLimitInfo {
 // How long to wait out a rate limit X reports without saying when it lifts
 export const DEFAULT_X_RATE_LIMIT_SECONDS = 900;
 
+// Pause deletes when X says this many requests or fewer remain in the window
+export const X_RATE_LIMIT_REMAINING_THRESHOLD = 2;
+
 export type XIndexTimelineStats = {
   // Timeline responses recognized as one of X's timeline operations
   recognizedResponses: number;
