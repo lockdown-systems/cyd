@@ -257,6 +257,28 @@ export class FacebookViewModel extends BrowserViewModel {
     return Array.isArray(data) ? data : [];
   }
 
+  // Run restoreUserLang if the loop ended before reaching it
+  async restoreUserLangIfPending(): Promise<void> {
+    const saved = this.jobs.some(
+      (job) => job.jobType === "saveUserLang" && job.status === "finished",
+    );
+    const restoreIndex = this.jobs.findIndex(
+      (job) => job.jobType === "restoreUserLang" && job.status === "pending",
+    );
+    if (!saved || restoreIndex === -1) {
+      return;
+    }
+
+    this.log("run", "job loop ended early, restoring user language");
+    try {
+      await this.runJob(restoreIndex);
+    } catch (e) {
+      await this.error(AutomationErrorType.facebook_runJob_UnknownError, {
+        error: formatError(e as Error),
+      });
+    }
+  }
+
   async runJob(jobIndex: number): Promise<void> {
     this.runJobsState = RunJobsState.Default;
 
@@ -406,6 +428,9 @@ export class FacebookViewModel extends BrowserViewModel {
               break;
             }
           }
+
+          await this.restoreUserLangIfPending();
+
           this.currentJobIndex = 0;
 
           // Determine the next state

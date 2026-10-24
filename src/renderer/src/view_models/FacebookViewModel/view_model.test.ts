@@ -425,6 +425,90 @@ describe("FacebookViewModel", () => {
       expect(vm.state).toBe(PlatformStates.WizardReviewDisplay);
     });
 
+    describe("RunJobs state", () => {
+      const JOB_TYPES = [
+        "login",
+        "saveUserLang",
+        "setLangToEnglish",
+        "deleteActivity",
+        "restoreUserLang",
+      ];
+
+      function setupRunJobs(throwOn: string | null) {
+        const vm = createMockFacebookViewModel({
+          facebookAccount: { userLang: "Español" },
+        });
+        vm.state = PlatformStates.RunJobs;
+        vm.jobs = JOB_TYPES.map((jobType, id) =>
+          createMockJob(jobType, { id }),
+        );
+        vi.spyOn(vm, "error").mockResolvedValue(undefined);
+        const runJobSpy = vi
+          .spyOn(vm, "runJob")
+          .mockImplementation(async (i: number) => {
+            const job = vm.jobs[i];
+            job.status = "running";
+            if (job.jobType === throwOn) {
+              throw new Error(`${throwOn} exploded`);
+            }
+            job.status = "finished";
+          });
+        return { vm, runJobSpy };
+      }
+
+      it("runs every job in order when nothing throws", async () => {
+        const { vm, runJobSpy } = setupRunJobs(null);
+
+        await vm.run();
+
+        expect(runJobSpy.mock.calls.map(([i]) => i)).toEqual([0, 1, 2, 3, 4]);
+        expect(vm.state).toBe(PlatformStates.FinishedRunningJobs);
+      });
+
+      it("still restores the user language when deleteActivity throws", async () => {
+        const { vm, runJobSpy } = setupRunJobs("deleteActivity");
+
+        await vm.run();
+
+        expect(vm.error).toHaveBeenCalledWith(
+          AutomationErrorType.facebook_runJob_UnknownError,
+          expect.anything(),
+        );
+        expect(runJobSpy.mock.calls.map(([i]) => i)).toEqual([0, 1, 2, 3, 4]);
+        expect(vm.jobs[4].status).toBe("finished");
+        expect(vm.state).toBe(PlatformStates.FinishedRunningJobs);
+      });
+
+      it("does not attempt a restore when login throws before the language was saved", async () => {
+        const { vm, runJobSpy } = setupRunJobs("login");
+
+        await vm.run();
+
+        expect(runJobSpy.mock.calls.map(([i]) => i)).toEqual([0]);
+        expect(vm.jobs[4].status).toBe("pending");
+      });
+
+      it("reports a second error if the restore itself throws", async () => {
+        const { vm, runJobSpy } = setupRunJobs("deleteActivity");
+        runJobSpy.mockImplementation(async (i: number) => {
+          const job = vm.jobs[i];
+          job.status = "running";
+          if (
+            job.jobType === "deleteActivity" ||
+            job.jobType === "restoreUserLang"
+          ) {
+            throw new Error(`${job.jobType} exploded`);
+          }
+          job.status = "finished";
+        });
+
+        await vm.run();
+
+        expect(vm.error).toHaveBeenCalledTimes(2);
+        expect(vm.state).toBe(PlatformStates.FinishedRunningJobs);
+      });
+    });
+
     it("handles FinishedRunningJobs state", async () => {
       const vm = createMockFacebookViewModel();
       vm.state = PlatformStates.FinishedRunningJobs;
