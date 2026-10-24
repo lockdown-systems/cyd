@@ -303,6 +303,21 @@ describe("FacebookViewModel Language Jobs", () => {
       expect(vm.jobs[0].status).toBe("error");
       expect(vm.account.facebookAccount?.userLang).toBe("");
     });
+
+    it("keeps the stored language when a previous run left it unrestored", async () => {
+      const vm = createMockFacebookViewModel({
+        facebookAccount: createMockFacebookAccount({
+          userLang: "Español",
+          langNeedsRestore: true,
+        }),
+      });
+
+      await LangJobs.runJobSaveUserLang(vm, 0);
+
+      expect(vm.getWebview()?.executeJavaScript).not.toHaveBeenCalled();
+      expect(vm.account.facebookAccount?.userLang).toBe("Español");
+      expect(vm.jobs[0].status).toBe("finished");
+    });
   });
 
   describe("runJobSetLangToEnglish", () => {
@@ -344,6 +359,8 @@ describe("FacebookViewModel Language Jobs", () => {
         "runJobSetLangToEnglish",
         "Successfully selected English (US)",
       );
+      expect(vm.account.facebookAccount?.langNeedsRestore).toBe(true);
+      expect(window.electron.database.saveAccount).toHaveBeenCalled();
     });
 
     it("sets state to SetLangToEnglish", async () => {
@@ -404,7 +421,10 @@ describe("FacebookViewModel Language Jobs", () => {
 
     it("restores language to Spanish", async () => {
       const vm = createMockFacebookViewModel({
-        facebookAccount: createMockFacebookAccount({ userLang: "Español" }),
+        facebookAccount: createMockFacebookAccount({
+          userLang: "Español",
+          langNeedsRestore: true,
+        }),
       });
       const mockWebview = vm.getWebview()!;
 
@@ -423,6 +443,27 @@ describe("FacebookViewModel Language Jobs", () => {
         "runJobRestoreUserLang",
         "Successfully restored to Español",
       );
+      expect(vm.account.facebookAccount?.langNeedsRestore).toBe(false);
+      expect(window.electron.database.saveAccount).toHaveBeenCalled();
+    });
+
+    it("leaves the restore owed when selecting the language fails", async () => {
+      const vm = createMockFacebookViewModel({
+        facebookAccount: createMockFacebookAccount({
+          userLang: "Español",
+          langNeedsRestore: true,
+        }),
+      });
+      const mockWebview = vm.getWebview()!;
+
+      vi.mocked(mockWebview.executeJavaScript)
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce(false); // select Español fails
+
+      await LangJobs.runJobRestoreUserLang(vm, 0);
+
+      expect(vm.account.facebookAccount?.langNeedsRestore).toBe(true);
     });
 
     it("restores language to Portuguese (Brazil)", async () => {

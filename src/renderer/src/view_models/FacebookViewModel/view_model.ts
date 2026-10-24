@@ -162,6 +162,9 @@ export class FacebookViewModel extends BrowserViewModel {
       jobTypes.push("setLangToEnglish");
       jobTypes.push("deleteActivity");
       jobTypes.push("restoreUserLang");
+    } else if (this.account.facebookAccount?.langNeedsRestore) {
+      // A previous run was interrupted after switching to English (US)
+      jobTypes.push("restoreUserLang");
     }
 
     // Create jobs in the database and get them back with real IDs
@@ -257,15 +260,19 @@ export class FacebookViewModel extends BrowserViewModel {
     return Array.isArray(data) ? data : [];
   }
 
-  // Run restoreUserLang if the loop ended before reaching it
+  // Run restoreUserLang now if this run switched the language and is logged in
   async restoreUserLangIfPending(): Promise<void> {
-    const saved = this.jobs.some(
-      (job) => job.jobType === "saveUserLang" && job.status === "finished",
+    const loggedIn = this.jobs.some(
+      (job) => job.jobType === "login" && job.status === "finished",
     );
     const restoreIndex = this.jobs.findIndex(
       (job) => job.jobType === "restoreUserLang" && job.status === "pending",
     );
-    if (!saved || restoreIndex === -1) {
+    if (
+      !this.account.facebookAccount?.langNeedsRestore ||
+      !loggedIn ||
+      restoreIndex === -1
+    ) {
       return;
     }
 
@@ -419,18 +426,21 @@ export class FacebookViewModel extends BrowserViewModel {
             try {
               await this.runJob(i);
             } catch (e) {
+              // Report without the modal, restore the language, then show it:
+              // Cancel or Retry in the modal tears this run down
               await this.error(
                 AutomationErrorType.facebook_runJob_UnknownError,
                 {
                   error: formatError(e as Error),
                 },
+                null,
+                true,
               );
+              await this.restoreUserLangIfPending();
+              await this.showErrorModal();
               break;
             }
           }
-
-          await this.restoreUserLangIfPending();
-
           this.currentJobIndex = 0;
 
           // Determine the next state

@@ -222,6 +222,19 @@ describe("FacebookViewModel", () => {
       expect(vm.jobs[0].jobType).toBe("login");
     });
 
+    it("adds a restore job when a previous run left the language unrestored", async () => {
+      const vm = createMockFacebookViewModel({
+        facebookAccount: { deleteWallPosts: false, langNeedsRestore: true },
+      });
+
+      await vm.defineJobs();
+
+      expect(vm.jobs.map((j) => j.jobType)).toEqual([
+        "login",
+        "restoreUserLang",
+      ]);
+    });
+
     it("initializes jobs with pending status", async () => {
       const vm = createMockFacebookViewModel({
         facebookAccount: { deleteWallPosts: true },
@@ -443,6 +456,9 @@ describe("FacebookViewModel", () => {
           createMockJob(jobType, { id }),
         );
         vi.spyOn(vm, "error").mockResolvedValue(undefined);
+        const modalSpy = vi
+          .spyOn(vm, "showErrorModal")
+          .mockResolvedValue(undefined);
         const runJobSpy = vi
           .spyOn(vm, "runJob")
           .mockImplementation(async (i: number) => {
@@ -451,9 +467,16 @@ describe("FacebookViewModel", () => {
             if (job.jobType === throwOn) {
               throw new Error(`${throwOn} exploded`);
             }
+            // Mirror what the real language jobs persist
+            if (job.jobType === "setLangToEnglish") {
+              vm.account.facebookAccount!.langNeedsRestore = true;
+            }
+            if (job.jobType === "restoreUserLang") {
+              vm.account.facebookAccount!.langNeedsRestore = false;
+            }
             job.status = "finished";
           });
-        return { vm, runJobSpy };
+        return { vm, runJobSpy, modalSpy };
       }
 
       it("runs every job in order when nothing throws", async () => {
@@ -465,26 +488,43 @@ describe("FacebookViewModel", () => {
         expect(vm.state).toBe(PlatformStates.FinishedRunningJobs);
       });
 
-      it("still restores the user language when deleteActivity throws", async () => {
-        const { vm, runJobSpy } = setupRunJobs("deleteActivity");
+      it("restores the user language before showing the error modal when deleteActivity throws", async () => {
+        const { vm, runJobSpy, modalSpy } = setupRunJobs("deleteActivity");
 
         await vm.run();
 
         expect(vm.error).toHaveBeenCalledWith(
           AutomationErrorType.facebook_runJob_UnknownError,
           expect.anything(),
+          null,
+          true,
         );
         expect(runJobSpy.mock.calls.map(([i]) => i)).toEqual([0, 1, 2, 3, 4]);
         expect(vm.jobs[4].status).toBe("finished");
+        expect(vm.account.facebookAccount?.langNeedsRestore).toBe(false);
+        expect(modalSpy).toHaveBeenCalledTimes(1);
+        const restoreCall = runJobSpy.mock.invocationCallOrder[4];
+        expect(restoreCall).toBeLessThan(modalSpy.mock.invocationCallOrder[0]);
         expect(vm.state).toBe(PlatformStates.FinishedRunningJobs);
       });
 
-      it("does not attempt a restore when login throws before the language was saved", async () => {
-        const { vm, runJobSpy } = setupRunJobs("login");
+      it("does not attempt a restore when login throws", async () => {
+        const { vm, runJobSpy, modalSpy } = setupRunJobs("login");
+        vm.account.facebookAccount!.langNeedsRestore = true;
 
         await vm.run();
 
         expect(runJobSpy.mock.calls.map(([i]) => i)).toEqual([0]);
+        expect(vm.jobs[4].status).toBe("pending");
+        expect(modalSpy).toHaveBeenCalledTimes(1);
+      });
+
+      it("does not attempt a restore when the language was never switched", async () => {
+        const { vm, runJobSpy } = setupRunJobs("setLangToEnglish");
+
+        await vm.run();
+
+        expect(runJobSpy.mock.calls.map(([i]) => i)).toEqual([0, 1, 2]);
         expect(vm.jobs[4].status).toBe("pending");
       });
 
@@ -498,6 +538,9 @@ describe("FacebookViewModel", () => {
             job.jobType === "restoreUserLang"
           ) {
             throw new Error(`${job.jobType} exploded`);
+          }
+          if (job.jobType === "setLangToEnglish") {
+            vm.account.facebookAccount!.langNeedsRestore = true;
           }
           job.status = "finished";
         });

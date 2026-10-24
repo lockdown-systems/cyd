@@ -294,6 +294,16 @@ export async function runJobSaveUserLang(
 ): Promise<void> {
   vm.runJobsState = RunJobsState.SaveUserLang;
 
+  // A previous run left the account in English (US); keep the real original
+  if (vm.account.facebookAccount?.langNeedsRestore) {
+    vm.log(
+      "runJobSaveUserLang",
+      `Previous run did not restore language, keeping ${vm.account.facebookAccount.userLang}`,
+    );
+    await Helpers.finishJob(vm, jobIndex);
+    return;
+  }
+
   vm.showBrowser = true;
   vm.showAutomationNotice = true;
   vm.instructions = vm.t("viewModels.facebook.jobs.savingLanguage");
@@ -380,6 +390,12 @@ export async function runJobSetLangToEnglish(
   }
 
   await vm.waitForPause();
+
+  // Mark the restore as owed before clicking, so a quit here is still undone
+  if (vm.account.facebookAccount) {
+    vm.account.facebookAccount.langNeedsRestore = true;
+    await window.electron.database.saveAccount(JSON.stringify(vm.account));
+  }
 
   // Select English (US)
   const selected = await selectLanguage(vm, DEFAULT_LANGUAGE);
@@ -475,6 +491,11 @@ export async function runJobRestoreUserLang(
     return;
   } else {
     vm.log("runJobRestoreUserLang", `Successfully restored to ${userLang}`);
+  }
+
+  if (vm.account.facebookAccount) {
+    vm.account.facebookAccount.langNeedsRestore = false;
+    await window.electron.database.saveAccount(JSON.stringify(vm.account));
   }
 
   await vm.waitForPause();

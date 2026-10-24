@@ -18,6 +18,7 @@ interface FacebookAccountRow {
   deleteTaggedPosts: number;
   deleteTaggedMedia: number;
   userLang: string;
+  langNeedsRestore: number;
 }
 
 function facebookAccountRowToFacebookAccount(
@@ -40,6 +41,7 @@ function facebookAccountRowToFacebookAccount(
     deleteTaggedPosts: row.deleteTaggedPosts === 1,
     deleteTaggedMedia: row.deleteTaggedMedia === 1,
     userLang: row.userLang || "English (US)",
+    langNeedsRestore: row.langNeedsRestore === 1,
   };
 }
 
@@ -102,7 +104,8 @@ export const saveFacebookAccount = (account: FacebookAccount) => {
             deleteCheckins = ?,
             deleteTaggedPosts = ?,
             deleteTaggedMedia = ?,
-            userLang = ?
+            userLang = ?,
+            langNeedsRestore = ?
         WHERE id = ?
     `,
     [
@@ -118,6 +121,7 @@ export const saveFacebookAccount = (account: FacebookAccount) => {
       account.deleteTaggedPosts ? 1 : 0,
       account.deleteTaggedMedia ? 1 : 0,
       account.userLang || "English (US)",
+      account.langNeedsRestore ? 1 : 0,
       account.id,
     ],
   );
