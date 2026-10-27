@@ -97,6 +97,7 @@ export function createMockFacebookAccount(
     deleteTaggedPosts: false,
     deleteTaggedMedia: false,
     userLang: "English (US)",
+    langNeedsRestore: false,
     ...overrides,
   };
 }

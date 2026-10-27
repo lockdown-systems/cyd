@@ -89,6 +89,7 @@ export type FacebookAccount = {
   deleteTaggedPosts: boolean;
   deleteTaggedMedia: boolean;
   userLang: string;
+  langNeedsRestore: boolean;
 };
 
 export type FacebookProgressInfo = {

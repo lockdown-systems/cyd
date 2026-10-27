@@ -279,6 +279,14 @@ SELECT id, type, sortOrder, xAccountId, uuid, facebookAccountID FROM account;`,
       `ALTER TABLE blueskyLocalAccount ADD COLUMN connectedAt DATETIME DEFAULT NULL;`,
     ],
   },
+  // Set while a Facebook run has switched the account to English (US) and not
+  // yet switched it back, so an interrupted run can be undone on the next one.
+  {
+    name: "record whether a Facebook account's language still needs restoring",
+    sql: [
+      `ALTER TABLE facebookAccount ADD COLUMN langNeedsRestore INTEGER DEFAULT 0;`,
+    ],
+  },
 ];
 
 export const runMainMigrations = () => {
