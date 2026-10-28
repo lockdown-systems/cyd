@@ -141,10 +141,21 @@ export async function xRequiresPremium(
     requiresPremium = true;
   }
 
+  if (xAccount.deleteTweets && xAccount.deleteTweetsFilterEnabled) {
+    console.log("Requires premium: deleteTweets and deleteTweetsFilterEnabled");
+    requiresPremium = true;
+  }
+
   // You can delete retweets for free, but only if you're not using these options
   if (xAccount.deleteRetweets && xAccount.deleteRetweetsDaysOldEnabled) {
     console.log(
       "Requires premium: deleteRetweets and deleteRetweetsDaysOldEnabled",
+    );
+    requiresPremium = true;
+  }
+  if (xAccount.deleteRetweets && xAccount.deleteRetweetsFilterEnabled) {
+    console.log(
+      "Requires premium: deleteRetweets and deleteRetweetsFilterEnabled",
     );
     requiresPremium = true;
   }
@@ -205,4 +216,20 @@ export async function xPostProgress(
       postXProgresResp.message,
     );
   }
+}
+
+// True when an "only if they contain" filter has nothing to look for. Stars
+// alone don't count, since "*" would match every post. Keep in step with
+// isEmptyContainsFilterText in the main process.
+export function isEmptyContainsFilterText(text: string): boolean {
+  return text.replace(/\*/g, "").trim() === "";
+}
+
+// More than this many "*" in a filter is rejected, since the match slows down
+// badly with them. Keep in step with containsFilter.ts in the main process.
+export const MAX_CONTAINS_FILTER_WILDCARDS = 3;
+
+export function containsFilterHasTooManyWildcards(text: string): boolean {
+  const stars = text.trim().replace(/\*+/g, "*").match(/\*/g);
+  return (stars?.length ?? 0) > MAX_CONTAINS_FILTER_WILDCARDS;
 }

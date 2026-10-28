@@ -140,6 +140,36 @@ onMounted(async () => {
         </div>
       </li>
       <li
+        v-if="
+          jobsType == 'delete' &&
+          model.account.xAccount?.deleteTweets &&
+          model.account.xAccount?.deleteTweetsFilterEnabled
+        "
+        class="mb-1"
+      >
+        <div class="card">
+          <small class="card-body">
+            <i class="fa-solid fa-magnifying-glass me-2" />
+            {{ t("premium.deleteTweetsContaining") }}
+          </small>
+        </div>
+      </li>
+      <li
+        v-if="
+          jobsType == 'delete' &&
+          model.account.xAccount?.deleteRetweets &&
+          model.account.xAccount?.deleteRetweetsFilterEnabled
+        "
+        class="mb-1"
+      >
+        <div class="card">
+          <small class="card-body">
+            <i class="fa-solid fa-magnifying-glass me-2" />
+            {{ t("premium.deleteRetweetsContaining") }}
+          </small>
+        </div>
+      </li>
+      <li
         v-if="jobsType == 'delete' && model.account.xAccount?.unfollowEveryone"
         class="mb-1"
       >

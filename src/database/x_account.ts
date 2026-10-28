@@ -31,6 +31,10 @@ interface XAccountRow {
   deleteRetweets: boolean;
   deleteRetweetsDaysOldEnabled: boolean;
   deleteRetweetsDaysOld: number;
+  deleteTweetsFilterEnabled: boolean;
+  deleteTweetsFilterText: string;
+  deleteRetweetsFilterEnabled: boolean;
+  deleteRetweetsFilterText: string;
   deleteLikes: boolean;
   deleteBookmarks: number;
   deleteDMs: boolean;
@@ -81,6 +85,10 @@ function xAccountRowtoXAccount(row: XAccountRow): XAccount {
     deleteRetweets: !!row.deleteRetweets,
     deleteRetweetsDaysOldEnabled: !!row.deleteRetweetsDaysOldEnabled,
     deleteRetweetsDaysOld: row.deleteRetweetsDaysOld,
+    deleteTweetsFilterEnabled: !!row.deleteTweetsFilterEnabled,
+    deleteTweetsFilterText: row.deleteTweetsFilterText ?? "",
+    deleteRetweetsFilterEnabled: !!row.deleteRetweetsFilterEnabled,
+    deleteRetweetsFilterText: row.deleteRetweetsFilterText ?? "",
     deleteLikes: !!row.deleteLikes,
     deleteBookmarks: !!row.deleteBookmarks,
     deleteDMs: !!row.deleteDMs,
@@ -176,6 +184,10 @@ export const saveXAccount = (account: XAccount) => {
             deleteRetweets = ?,
             deleteRetweetsDaysOldEnabled = ?,
             deleteRetweetsDaysOld = ?,
+            deleteTweetsFilterEnabled = ?,
+            deleteTweetsFilterText = ?,
+            deleteRetweetsFilterEnabled = ?,
+            deleteRetweetsFilterText = ?,
             deleteLikes = ?,
             deleteBookmarks = ?,
             deleteDMs = ?,
@@ -220,6 +232,10 @@ export const saveXAccount = (account: XAccount) => {
       account.deleteRetweets ? 1 : 0,
       account.deleteRetweetsDaysOldEnabled ? 1 : 0,
       account.deleteRetweetsDaysOld,
+      account.deleteTweetsFilterEnabled ? 1 : 0,
+      account.deleteTweetsFilterText,
+      account.deleteRetweetsFilterEnabled ? 1 : 0,
+      account.deleteRetweetsFilterText,
       account.deleteLikes ? 1 : 0,
       account.deleteBookmarks ? 1 : 0,
       account.deleteDMs ? 1 : 0,

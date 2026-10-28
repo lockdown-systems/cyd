@@ -2,6 +2,7 @@ import log from "electron-log/main";
 import { getTimestampDaysAgo } from "../../../util";
 import type { XAccountController } from "../../x_account_controller";
 import type { XDeleteTweetsStartResponse } from "../../../shared_types";
+import { containsFilterCondition } from "./containsFilter";
 
 export async function deleteTweetsStart(
   controller: XAccountController,
@@ -41,6 +42,15 @@ export async function deleteTweetsStart(
   if (controller.account.deleteTweetsRetweetsThresholdEnabled) {
     whereClause += " AND t.retweetCount <= ?";
     params.push(controller.account.deleteTweetsRetweetsThreshold);
+  }
+  const containsFilter = containsFilterCondition(
+    "t.text",
+    controller.account.deleteTweetsFilterEnabled,
+    controller.account.deleteTweetsFilterText,
+  );
+  if (containsFilter) {
+    whereClause += ` AND ${containsFilter.sql}`;
+    params.push(containsFilter.param);
   }
 
   // Fetch tweets using the helper function

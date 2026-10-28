@@ -37,6 +37,10 @@ export type XAccount = {
   deleteRetweets: boolean;
   deleteRetweetsDaysOldEnabled: boolean;
   deleteRetweetsDaysOld: number;
+  deleteTweetsFilterEnabled: boolean;
+  deleteTweetsFilterText: string;
+  deleteRetweetsFilterEnabled: boolean;
+  deleteRetweetsFilterText: string;
   deleteLikes: boolean;
   deleteBookmarks: boolean;
   deleteDMs: boolean;

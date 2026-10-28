@@ -2,6 +2,7 @@ import log from "electron-log/main";
 import { exec, Sqlite3Count } from "../../../database";
 import { getTimestampDaysAgo } from "../../../util";
 import type { XAccountController } from "../../x_account_controller";
+import { containsFilterCondition } from "./containsFilter";
 
 // Returns the count of tweets that are not archived
 // If total is true, return the total count of tweets not archived
@@ -20,80 +21,44 @@ export async function deleteTweetsCountNotArchived(
     throw new Error("Account not found");
   }
 
-  // Select just the tweets that need to be deleted based on the settings
-  let count: Sqlite3Count;
+  // Count all non-deleted, non-archived tweets, with no filters
+  let whereClause =
+    "archivedAt IS NULL AND deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ?";
+  const params: (string | number)[] = ["RT @%", controller.account.username];
 
-  if (total) {
-    // Count all non-deleted, non-archived tweets, with no filters
-    count = exec(
-      controller.db,
-      "SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ?",
-      ["RT @%", controller.account.username],
-      "get",
-    ) as Sqlite3Count;
-  } else {
+  // Select just the tweets that need to be deleted based on the settings
+  if (!total) {
     const daysOldTimestamp = controller.account.deleteTweetsDaysOldEnabled
       ? getTimestampDaysAgo(controller.account.deleteTweetsDaysOld)
       : getTimestampDaysAgo(0);
-    if (
-      controller.account.deleteTweetsLikesThresholdEnabled &&
-      controller.account.deleteTweetsRetweetsThresholdEnabled
-    ) {
-      // Both likes and retweets thresholds
-      count = exec(
-        controller.db,
-        "SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ? AND retweetCount <= ?",
-        [
-          "RT @%",
-          controller.account.username,
-          daysOldTimestamp,
-          controller.account.deleteTweetsLikesThreshold,
-          controller.account.deleteTweetsRetweetsThreshold,
-        ],
-        "get",
-      ) as Sqlite3Count;
-    } else if (
-      controller.account.deleteTweetsLikesThresholdEnabled &&
-      !controller.account.deleteTweetsRetweetsThresholdEnabled
-    ) {
-      // Just likes threshold
-      count = exec(
-        controller.db,
-        "SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND likeCount <= ?",
-        [
-          "RT @%",
-          controller.account.username,
-          daysOldTimestamp,
-          controller.account.deleteTweetsLikesThreshold,
-        ],
-        "get",
-      ) as Sqlite3Count;
-    } else if (
-      !controller.account.deleteTweetsLikesThresholdEnabled &&
-      controller.account.deleteTweetsRetweetsThresholdEnabled
-    ) {
-      // Just retweets threshold
-      count = exec(
-        controller.db,
-        "SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ? AND retweetCount <= ?",
-        [
-          "RT @%",
-          controller.account.username,
-          daysOldTimestamp,
-          controller.account.deleteTweetsRetweetsThreshold,
-        ],
-        "get",
-      ) as Sqlite3Count;
-    } else {
-      // Neither likes nor retweets threshold
-      count = exec(
-        controller.db,
-        "SELECT COUNT(*) AS count FROM tweet WHERE archivedAt IS NULL AND deletedTweetAt IS NULL AND text NOT LIKE ? AND username = ? AND createdAt <= ?",
-        ["RT @%", controller.account.username, daysOldTimestamp],
-        "get",
-      ) as Sqlite3Count;
+    whereClause += " AND createdAt <= ?";
+    params.push(daysOldTimestamp);
+
+    if (controller.account.deleteTweetsLikesThresholdEnabled) {
+      whereClause += " AND likeCount <= ?";
+      params.push(controller.account.deleteTweetsLikesThreshold);
+    }
+    if (controller.account.deleteTweetsRetweetsThresholdEnabled) {
+      whereClause += " AND retweetCount <= ?";
+      params.push(controller.account.deleteTweetsRetweetsThreshold);
+    }
+    const containsFilter = containsFilterCondition(
+      "text",
+      controller.account.deleteTweetsFilterEnabled,
+      controller.account.deleteTweetsFilterText,
+    );
+    if (containsFilter) {
+      whereClause += ` AND ${containsFilter.sql}`;
+      params.push(containsFilter.param);
     }
   }
+
+  const count = exec(
+    controller.db,
+    `SELECT COUNT(*) AS count FROM tweet WHERE ${whereClause}`,
+    params,
+    "get",
+  ) as Sqlite3Count;
 
   return count.count;
 }

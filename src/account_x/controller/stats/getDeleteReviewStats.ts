@@ -9,6 +9,9 @@ export async function getDeleteReviewStats(
   controller: XAccountController,
 ): Promise<XDeleteReviewStats> {
   const deleteReviewStats = emptyXDeleteReviewStats();
+  // The delete settings may have just been saved from the options page, so
+  // count against what is in the database rather than the cached account
+  controller.refreshAccount();
   if (!controller.account?.username) {
     log.info("XAccountController.getDeleteReviewStats: no account");
     return deleteReviewStats;
