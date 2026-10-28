@@ -44,6 +44,12 @@ export async function deleteContentRetryLoop(
   let statusCode = 0;
 
   for (let tries = 0; tries < 3; tries++) {
+    // Pause if the previous delete left little quota in the window
+    vm.rateLimitInfo = await window.electron.X.isRateLimited(vm.account.id);
+    if (vm.rateLimitInfo.isRateLimited) {
+      await vm.waitForRateLimit();
+    }
+
     statusCode = await deleteFunction();
 
     if (statusCode === 200) {

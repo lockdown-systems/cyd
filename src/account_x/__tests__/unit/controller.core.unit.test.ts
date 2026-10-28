@@ -183,3 +183,59 @@ test("test migration: 20241127_add_deletedAt_fields", async () => {
   // Cleanup
   migrationContext.cleanup();
 });
+
+const deleteURL =
+  "https://x.com/i/api/graphql/nxpZCY2K-I6QoFHAHeojFQ/DeleteTweet";
+
+test("observeDeleteRateLimitHeaders() marks the account rate limited when a delete mutation has little quota left", async () => {
+  controller.observeDeleteRateLimitHeaders({
+    url: deleteURL,
+    statusCode: 200,
+    responseHeaders: {
+      "x-rate-limit-limit": ["50"],
+      "x-rate-limit-remaining": ["2"],
+      "x-rate-limit-reset": ["1700000000"],
+    },
+  });
+
+  expect(await controller.isRateLimited()).toEqual({
+    isRateLimited: true,
+    rateLimitReset: 1700000000,
+  });
+});
+
+test("observeDeleteRateLimitHeaders() leaves the account alone while quota remains", async () => {
+  controller.observeDeleteRateLimitHeaders({
+    url: deleteURL,
+    statusCode: 200,
+    responseHeaders: {
+      "x-rate-limit-remaining": ["3"],
+      "x-rate-limit-reset": ["1700000000"],
+    },
+  });
+
+  expect((await controller.isRateLimited()).isRateLimited).toBe(false);
+});
+
+test("observeDeleteRateLimitHeaders() ignores endpoints other than the delete mutations", async () => {
+  controller.observeDeleteRateLimitHeaders({
+    url: "https://x.com/i/api/graphql/abc123/CreatorStudioTabBarItemQuery",
+    statusCode: 200,
+    responseHeaders: {
+      "x-rate-limit-remaining": ["0"],
+      "x-rate-limit-reset": ["1700000000"],
+    },
+  });
+
+  expect((await controller.isRateLimited()).isRateLimited).toBe(false);
+});
+
+test("observeDeleteRateLimitHeaders() ignores responses without rate limit headers", async () => {
+  controller.observeDeleteRateLimitHeaders({
+    url: deleteURL,
+    statusCode: 200,
+    responseHeaders: { "content-type": ["application/json"] },
+  });
+
+  expect((await controller.isRateLimited()).isRateLimited).toBe(false);
+});
